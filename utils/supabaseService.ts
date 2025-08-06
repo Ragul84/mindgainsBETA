@@ -157,7 +157,7 @@ export class SupabaseService {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .maybeSingle()
 
     if (error) {
@@ -175,7 +175,7 @@ export class SupabaseService {
         ...updates,
         updated_at: new Date().toISOString()
       })
-      .eq('user_id', userId)
+      .eq('id', userId)
       .select()
       .single()
 
