@@ -29,7 +29,8 @@ import { theme } from '@/constants/theme';
 import MascotAvatar from '@/components/ui/MascotAvatar';
 import CircleProgress from '@/components/ui/CircleProgress';
 import GradientButton from '@/components/ui/GradientButton';
-import { SupabaseService, UserProfile, UserStats } from '@/utils/supabaseService';
+import { SupabaseService } from '@/utils/supabaseService';
+import type { UserProfile, UserStats } from '@/utils/supabaseService';
 
 const { width } = Dimensions.get('window');
 
