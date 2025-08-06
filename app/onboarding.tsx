@@ -189,6 +189,7 @@ export default function OnboardingScreen() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
   const scrollViewRef = useRef<ScrollView>(null);
   const progressValue = useSharedValue(0);
@@ -198,8 +199,19 @@ export default function OnboardingScreen() {
   const shimmerPosition = useSharedValue(-1);
 
   useEffect(() => {
-    // Check if user is authenticated
-    checkUserStatus();
+    setIsMounted(true);
+    
+    // Check if user is authenticated with error handling
+    const initializeOnboarding = async () => {
+      try {
+        await checkUserStatus();
+      } catch (error) {
+        console.error('Error during onboarding initialization:', error);
+        // Continue with onboarding if there's an error
+      }
+    };
+    
+    initializeOnboarding();
     
     progressValue.value = withTiming((currentStep + 1) / onboardingSteps.length, { duration: 600 });
     
@@ -220,9 +232,13 @@ export default function OnboardingScreen() {
 
   const checkUserStatus = async () => {
     try {
+      // Check if component is still mounted before making async calls
+      if (!isMounted) return;
+      
       const user = await SupabaseService.getCurrentUser();
       if (!user) {
         // User not authenticated, redirect to auth
+        if (!isMounted) return;
         router.replace('/auth');
         return;
       }
@@ -230,6 +246,7 @@ export default function OnboardingScreen() {
       const profile = await SupabaseService.getProfile(user.id);
       if (profile?.full_name) {
         // User already has profile, redirect to main app
+        if (!isMounted) return;
         router.replace('/(tabs)');
         return;
       }

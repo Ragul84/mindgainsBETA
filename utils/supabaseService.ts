@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Only create client if environment variables are available
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
 export interface UserProfile {
   id: string;
@@ -87,6 +90,10 @@ export interface UserAchievement {
 export class SupabaseService {
   // Authentication
   static async signUp(email: string, password: string, fullName?: string) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized. Please check your environment variables.')
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -128,6 +135,10 @@ export class SupabaseService {
   }
 
   static async signIn(email: string, password: string) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized. Please check your environment variables.')
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -138,11 +149,19 @@ export class SupabaseService {
   }
 
   static async signOut() {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized. Please check your environment variables.')
+    }
+    
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
 
   static async getCurrentUser() {
+    if (!supabase) {
+      return null
+    }
+    
     const { data: { user }, error } = await supabase.auth.getUser()
     
     // Handle the case where there's no auth session - this is normal for unauthenticated users

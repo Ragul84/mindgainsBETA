@@ -94,14 +94,26 @@ export default function SplashScreen() {
   const glowIntensity = useSharedValue(0);
 
   useEffect(() => {
-    startAnimations();
-    
-    // Navigate to auth after splash
-    const timer = setTimeout(() => {
-      router.replace('/auth');
-    }, 4000);
+    const initializeApp = async () => {
+      startAnimations();
+      
+      // Navigate to auth after splash with error handling
+      try {
+        const timer = setTimeout(() => {
+          router.replace('/auth');
+        }, 4000);
 
-    return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Fallback navigation
+        setTimeout(() => {
+          router.replace('/auth');
+        }, 4000);
+      }
+    };
+    
+    initializeApp();
   }, []);
 
   const startAnimations = () => {
