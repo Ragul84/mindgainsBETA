@@ -115,6 +115,100 @@ export default function ClarityRoomScreen() {
 
   const loadMissionContent = async () => {
     try {
+      // Check if Supabase is configured or if it's a demo mission
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL || (missionId as string).startsWith('demo_')) {
+        // Use demo content
+        const demoContent: AdaptiveLearningContent = {
+          overview: "This is a comprehensive learning mission about Indian Constitution's Fundamental Rights. You'll explore Articles 12-35 which form the cornerstone of individual liberty in India.",
+          contentType: "constitution",
+          examFocus: "upsc",
+          tabs: [
+            {
+              id: "articles",
+              title: "Key Articles",
+              type: "articles",
+              content: [
+                {
+                  articleNumber: "Article 14",
+                  title: "Right to Equality",
+                  description: "Equality before law and equal protection of laws",
+                  keyPoints: [
+                    "Applies to all persons, not just citizens",
+                    "Prohibits discrimination by the state",
+                    "Foundation of rule of law in India"
+                  ],
+                  examRelevance: "Frequently asked in Prelims and Mains"
+                },
+                {
+                  articleNumber: "Article 19",
+                  title: "Protection of Rights",
+                  description: "Six fundamental freedoms for citizens",
+                  keyPoints: [
+                    "Freedom of speech and expression",
+                    "Freedom to assemble peacefully",
+                    "Freedom to form associations"
+                  ],
+                  examRelevance: "Important for both Prelims MCQs and Mains essays"
+                }
+              ]
+            },
+            {
+              id: "timeline",
+              title: "Historical Timeline",
+              type: "timeline",
+              content: [
+                {
+                  year: "1950",
+                  event: "Constitution came into effect",
+                  significance: "Fundamental Rights became enforceable"
+                },
+                {
+                  year: "1951",
+                  event: "First Amendment Act",
+                  significance: "Added restrictions to freedom of speech"
+                }
+              ]
+            },
+            {
+              id: "concepts",
+              title: "Key Concepts",
+              type: "concepts",
+              content: [
+                {
+                  concept: "Negative Rights",
+                  definition: "Rights that restrict government action",
+                  explanation: "Fundamental Rights are primarily negative rights that prevent state interference",
+                  examples: ["Right to Life", "Right to Equality", "Right to Freedom"]
+                },
+                {
+                  concept: "Writ Jurisdiction",
+                  definition: "Power of courts to issue writs for enforcement of Fundamental Rights",
+                  explanation: "Supreme Court and High Courts can issue five types of writs",
+                  examples: ["Habeas Corpus", "Mandamus", "Prohibition"]
+                }
+              ]
+            }
+          ],
+          keyHighlights: [
+            "Fundamental Rights are justiciable and enforceable by courts",
+            "They can be suspended during national emergency",
+            "Some rights are available only to citizens, others to all persons"
+          ],
+          examTips: [
+            "Focus on Article numbers and their specific provisions for Prelims",
+            "Understand the philosophy behind each right for Mains answers",
+            "Learn landmark Supreme Court cases for comprehensive understanding",
+            "Practice writing answers on conflicts between Fundamental Rights and DPSP"
+          ],
+          difficulty: "intermediate",
+          estimatedTime: "25 minutes"
+        };
+        
+        setContent(demoContent);
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await SupabaseService.getMissionContent(missionId as string, 'clarity');
       if (result.success && result.content.learning_content) {
         setContent(result.content.learning_content);

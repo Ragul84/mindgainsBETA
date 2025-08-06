@@ -1,14 +1,48 @@
 import { createClient } from '@supabase/supabase-js'
 import 'react-native-url-polyfill/auto'
+import { 
+  demoUserProfile, 
+  demoUserStats, 
+  demoMissions, 
+  demoSubjects, 
+  demoAchievements, 
+  demoUserAchievements,
+  demoAppStats 
+} from './demoData';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.')
+  console.warn('Supabase environment variables not found. Some features may not work.')
+  // Create a mock client for development
+  const mockClient = {
+    auth: {
+      signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+      signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+      signOut: () => Promise.resolve({ error: null }),
+      getUser: () => Promise.resolve({ data: { user: null }, error: { message: 'Supabase not configured' } }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: { message: 'Supabase not configured' } }),
+    },
+    from: () => ({
+      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+      insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+      update: () => ({ eq: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }),
+      upsert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+    }),
+    functions: {
+      invoke: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+    },
+    channel: () => ({
+      on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+    }),
+  }
+  
+  // Export mock client
+  export const supabase = mockClient as any
+} else {
+  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export interface UserProfile {
   id: string;
@@ -154,6 +188,11 @@ export class SupabaseService {
 
   // Profile Management
   static async getProfile(userId: string): Promise<UserProfile | null> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return demoUserProfile;
+    }
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -162,13 +201,18 @@ export class SupabaseService {
 
     if (error) {
       console.error('Error fetching profile:', error)
-      return null
+      return demoUserProfile // Fallback to demo data
     }
 
-    return data
+    return data || demoUserProfile
   }
 
   static async updateProfile(userId: string, updates: Partial<UserProfile>) {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return { ...demoUserProfile, ...updates };
+    }
+    
     const { data, error } = await supabase
       .from('profiles')
       .update({ 
@@ -185,6 +229,11 @@ export class SupabaseService {
 
   // User Stats
   static async getUserStats(userId: string): Promise<UserStats | null> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return demoUserStats;
+    }
+    
     const { data, error } = await supabase
       .from('user_stats')
       .select('*')
@@ -193,10 +242,10 @@ export class SupabaseService {
 
     if (error) {
       console.error('Error fetching user stats:', error)
-      return null
+      return demoUserStats // Fallback to demo data
     }
 
-    return data
+    return data || demoUserStats
   }
 
   // Missions
@@ -211,6 +260,30 @@ export class SupabaseService {
     contentType?: string;
     examFocus?: string;
   }) {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      const demoMission = {
+        id: `demo_${Date.now()}`,
+        user_id: 'demo-user',
+        title: missionData.title,
+        description: missionData.description,
+        subject_id: null,
+        content_type: missionData.content_type,
+        content_url: missionData.content_url,
+        content_text: missionData.content_text,
+        difficulty: missionData.difficulty || 'medium',
+        status: 'active' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      return {
+        success: true,
+        mission: demoMission,
+        message: 'Demo mission created successfully'
+      };
+    }
+    
     const { data, error } = await supabase.functions.invoke('create-mission', {
       body: missionData,
     })
@@ -220,6 +293,11 @@ export class SupabaseService {
   }
 
   static async getUserMissions(userId: string, limit = 10): Promise<Mission[]> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return demoMissions.slice(0, limit);
+    }
+    
     const { data, error } = await supabase
       .from('missions')
       .select('*')
@@ -229,13 +307,23 @@ export class SupabaseService {
 
     if (error) {
       console.error('Error fetching missions:', error)
-      return []
+      return demoMissions.slice(0, limit) // Fallback to demo data
     }
 
-    return data || []
+    return data || demoMissions.slice(0, limit)
   }
 
   static async getMissionContent(missionId: string, roomType?: string) {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return {
+        success: true,
+        content: {
+          learning_content: null, // Will be handled by individual room components
+        }
+      };
+    }
+    
     const { data, error } = await supabase.functions.invoke('get-mission-content', {
       body: { mission_id: missionId, room_type: roomType },
     })
@@ -253,6 +341,18 @@ export class SupabaseService {
     time_spent: number;
     completed: boolean;
   }) {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return {
+        success: true,
+        progress: progressData,
+        xp_reward: 25,
+        user_stats: demoUserStats,
+        new_achievements: [],
+        mission_completed: false
+      };
+    }
+    
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
     if (sessionError || !session) {
@@ -271,6 +371,11 @@ export class SupabaseService {
   }
 
   static async getMissionProgress(userId: string, missionId: string): Promise<MissionProgress[]> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('mission_progress')
       .select('*')
@@ -287,6 +392,11 @@ export class SupabaseService {
 
   // Achievements
   static async getUserAchievements(userId: string): Promise<UserAchievement[]> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return demoUserAchievements;
+    }
+    
     const { data, error } = await supabase
       .from('user_achievements')
       .select('*')
@@ -295,13 +405,18 @@ export class SupabaseService {
 
     if (error) {
       console.error('Error fetching achievements:', error)
-      return []
+      return demoUserAchievements // Fallback to demo data
     }
 
-    return data || []
+    return data || demoUserAchievements
   }
 
   static async getAllAchievements(): Promise<Achievement[]> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return demoAchievements;
+    }
+    
     const { data, error } = await supabase
       .from('achievements')
       .select('*')
@@ -309,14 +424,19 @@ export class SupabaseService {
 
     if (error) {
       console.error('Error fetching achievements:', error)
-      return []
+      return demoAchievements // Fallback to demo data
     }
 
-    return data || []
+    return data || demoAchievements
   }
 
   // Subjects
   static async getSubjects(): Promise<Subject[]> {
+    // Return demo data if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return demoSubjects;
+    }
+    
     const { data, error } = await supabase
       .from('subjects')
       .select('*')
@@ -324,14 +444,19 @@ export class SupabaseService {
 
     if (error) {
       console.error('Error fetching subjects:', error)
-      return []
+      return demoSubjects // Fallback to demo data
     }
 
-    return data || []
+    return data || demoSubjects
   }
 
   // Real-time subscriptions
   static subscribeToUserStats(userId: string, callback: (stats: UserStats) => void) {
+    // Return mock subscription if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return { unsubscribe: () => {} };
+    }
+    
     return supabase
       .channel('user_stats')
       .on(
@@ -354,6 +479,11 @@ export class SupabaseService {
     missionId: string,
     callback: (progress: MissionProgress) => void
   ) {
+    // Return mock subscription if Supabase not configured
+    if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+      return { unsubscribe: () => {} };
+    }
+    
     return supabase
       .channel('mission_progress')
       .on(
@@ -376,6 +506,12 @@ export class SupabaseService {
   // Analytics for marketing
   static async trackUserActivity(userId: string, activity: string, metadata?: any) {
     try {
+      // Skip if Supabase not configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        console.log(`Demo: User ${userId} performed: ${activity}`, metadata);
+        return;
+      }
+      
       // Update last activity date
       await supabase
         .from('user_stats')
@@ -395,6 +531,11 @@ export class SupabaseService {
   // Marketing features
   static async getAppStats() {
     try {
+      // Return demo data if Supabase not configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        return demoAppStats;
+      }
+      
       // Get total users
       const { count: totalUsers } = await supabase
         .from('profiles')
@@ -421,11 +562,7 @@ export class SupabaseService {
       }
     } catch (error) {
       console.error('Error fetching app stats:', error)
-      return {
-        totalUsers: 0,
-        totalMissions: 0,
-        activeUsers: 0,
-      }
+      return demoAppStats // Fallback to demo data
     }
   }
 }

@@ -99,6 +99,17 @@ export default function SplashScreen() {
       
       // Navigate to auth after splash with error handling
       try {
+        // Check if user is already authenticated (for demo or real)
+        if (process.env.EXPO_PUBLIC_SUPABASE_URL) {
+          const user = await SupabaseService.getCurrentUser();
+          if (user) {
+            const timer = setTimeout(() => {
+              router.replace('/(tabs)');
+            }, 4000);
+            return () => clearTimeout(timer);
+          }
+        }
+        
         const timer = setTimeout(() => {
           router.replace('/auth');
         }, 4000);

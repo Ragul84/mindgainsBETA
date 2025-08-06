@@ -330,9 +330,116 @@ export default function AchievementsScreen() {
 
   const loadAchievements = async () => {
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        // Use demo achievements data
+        const demoAchievements = [
+          {
+            id: '1',
+            name: 'First Steps',
+            description: 'Complete your first learning mission',
+            icon: '🎯',
+            category: 'learning',
+            required_value: 1,
+            xp_reward: 50,
+            badge_color: theme.colors.accent.green,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: '2',
+            name: 'Speed Demon',
+            description: 'Complete a mission in under 5 minutes',
+            icon: '⚡',
+            category: 'speed',
+            required_value: 1,
+            xp_reward: 100,
+            badge_color: theme.colors.accent.yellow,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: '3',
+            name: 'Perfect Score',
+            description: 'Get 100% on any test',
+            icon: '🏆',
+            category: 'mastery',
+            required_value: 1,
+            xp_reward: 200,
+            badge_color: theme.colors.accent.purple,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          },
+        ];
+        
+        const demoUserAchievements = [
+          {
+            id: 'ua1',
+            user_id: 'demo-user',
+            achievement_id: '1',
+            progress: 1,
+            completed: true,
+            completed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 'ua2',
+            user_id: 'demo-user',
+            achievement_id: '2',
+            progress: 1,
+            completed: true,
+            completed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          },
+        ];
+        
+        setAchievements(demoAchievements);
+        setUserAchievements(demoUserAchievements);
+        
+        // Calculate demo stats
+        setUserStats({
+          totalAchievements: demoAchievements.length,
+          unlockedAchievements: demoUserAchievements.length,
+          totalXP: 150,
+          rareAchievements: 1,
+        });
+        
+        // Set demo categories
+        setCategories([
+          {
+            id: 'learning',
+            name: 'Learning',
+            icon: <Brain size={20} color={theme.colors.text.primary} />,
+            color: theme.colors.accent.purple,
+            count: 1,
+            unlockedCount: 1,
+          },
+          {
+            id: 'speed',
+            name: 'Speed',
+            icon: <Zap size={20} color={theme.colors.text.primary} />,
+            color: theme.colors.accent.yellow,
+            count: 1,
+            unlockedCount: 1,
+          },
+          {
+            id: 'mastery',
+            name: 'Mastery',
+            icon: <Crown size={20} color={theme.colors.text.primary} />,
+            color: theme.colors.accent.green,
+            count: 1,
+            unlockedCount: 0,
+          },
+        ]);
+        
+        setIsLoading(false);
+        return;
+      }
+      
       const user = await SupabaseService.getCurrentUser();
       if (!user) {
-        router.replace('/auth');
+        console.log('No user found for achievements');
+        setIsLoading(false);
         return;
       }
 

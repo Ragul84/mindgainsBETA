@@ -209,9 +209,32 @@ export default function CreateScreen() {
     setIsLoading(true);
 
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        // Demo mission creation
+        const demoMissionId = `demo_${Date.now()}`;
+        setCreatedMissionId(demoMissionId);
+        setIsSuccess(true);
+        successScale.value = withSpring(1, { damping: 12, stiffness: 100 });
+        
+        // Navigate to mission after delay
+        setTimeout(() => {
+          router.push({
+            pathname: '/mission/clarity',
+            params: {
+              missionId: demoMissionId,
+            },
+          });
+        }, 2000);
+        
+        setIsLoading(false);
+        return;
+      }
+      
       const user = await SupabaseService.getCurrentUser();
       if (!user) {
-        router.replace('/auth');
+        Alert.alert('Authentication Required', 'Please sign in to create missions');
+        setIsLoading(false);
         return;
       }
 

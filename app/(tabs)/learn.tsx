@@ -177,6 +177,57 @@ export default function LearnScreen() {
 
   const loadContent = async () => {
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        // Use demo subjects data
+        const demoSubjects = [
+          {
+            id: '1',
+            name: 'UPSC',
+            description: 'Civil Services Examination',
+            icon: '🏛️',
+            color: theme.colors.accent.purple,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: '2',
+            name: 'JEE/NEET',
+            description: 'Engineering & Medical Entrance',
+            icon: '🔬',
+            color: theme.colors.accent.green,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: '3',
+            name: 'Banking',
+            description: 'Banking Sector Exams',
+            icon: '💰',
+            color: theme.colors.accent.yellow,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: '4',
+            name: 'SSC',
+            description: 'Staff Selection Commission',
+            icon: '📝',
+            color: theme.colors.accent.blue,
+            created_at: new Date().toISOString(),
+          },
+        ];
+        
+        const transformedSubjects = demoSubjects.map(subject => ({
+          id: subject.id,
+          name: subject.name,
+          icon: subject.icon,
+          color: subject.color,
+          courseCount: Math.floor(Math.random() * 30) + 15,
+        }));
+        
+        setSubjects(transformedSubjects);
+        setIsLoading(false);
+        return;
+      }
+      
       // Load subjects from Supabase
       const supabaseSubjects = await SupabaseService.getSubjects();
       

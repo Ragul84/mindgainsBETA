@@ -68,6 +68,57 @@ export default function MemoryForgeScreen() {
 
   const loadMemoryContent = async () => {
     try {
+      // Check if Supabase is configured or if it's a demo mission
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL || (missionId as string).startsWith('demo_')) {
+        // Use demo flashcards
+        const demoFlashcards: Flashcard[] = [
+          {
+            id: 'f1',
+            front: 'Article 14',
+            back: 'Right to Equality - Equality before law and equal protection of laws',
+            category: 'Fundamental Rights',
+            difficulty: 'medium',
+            hint: 'This article applies to all persons, not just citizens',
+          },
+          {
+            id: 'f2',
+            front: 'Article 19',
+            back: 'Six fundamental freedoms including speech, assembly, and movement',
+            category: 'Fundamental Rights',
+            difficulty: 'medium',
+            hint: 'Only available to citizens of India',
+          },
+          {
+            id: 'f3',
+            front: 'Habeas Corpus',
+            back: 'Writ against illegal detention - "produce the body"',
+            category: 'Writs',
+            difficulty: 'hard',
+            hint: 'Latin term meaning "you may have the body"',
+          },
+          {
+            id: 'f4',
+            front: 'Article 21',
+            back: 'Right to Life and Personal Liberty - most important fundamental right',
+            category: 'Fundamental Rights',
+            difficulty: 'easy',
+            hint: 'Expanded through judicial interpretation',
+          },
+          {
+            id: 'f5',
+            front: 'Article 32',
+            back: 'Right to Constitutional Remedies - "Heart and Soul" of Constitution',
+            category: 'Fundamental Rights',
+            difficulty: 'medium',
+            hint: 'Dr. Ambedkar called it the heart and soul',
+          },
+        ];
+        
+        setFlashcards(demoFlashcards);
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await SupabaseService.getMissionContent(missionId as string, 'memory');
       if (result.success && result.content.flashcards) {
         setFlashcards(result.content.flashcards);

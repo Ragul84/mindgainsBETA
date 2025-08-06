@@ -74,6 +74,54 @@ export default function TestTowerScreen() {
 
   const loadTestContent = async () => {
     try {
+      // Check if Supabase is configured or if it's a demo mission
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL || (missionId as string).startsWith('demo_')) {
+        // Use demo test questions
+        const demoQuestions: TestQuestion[] = [
+          {
+            id: 't1',
+            question: 'Which Article of the Constitution is known as the "Heart and Soul" of the Constitution?',
+            question_type: 'mcq',
+            options: ['Article 14', 'Article 19', 'Article 21', 'Article 32'],
+            correct_answer: 3,
+            points: 10,
+            explanation: 'Article 32 (Right to Constitutional Remedies) was called the "Heart and Soul" by Dr. B.R. Ambedkar.',
+            difficulty: 'medium',
+          },
+          {
+            id: 't2',
+            question: 'Explain the significance of Article 21 in the Indian Constitution.',
+            question_type: 'short',
+            points: 15,
+            explanation: 'Article 21 guarantees Right to Life and Personal Liberty and has been expanded through judicial interpretation.',
+            difficulty: 'medium',
+          },
+          {
+            id: 't3',
+            question: 'Discuss the evolution of Fundamental Rights through judicial interpretation with examples.',
+            question_type: 'long',
+            points: 25,
+            explanation: 'This requires detailed discussion of landmark cases and judicial activism.',
+            difficulty: 'hard',
+          },
+          {
+            id: 't4',
+            question: 'Which of the following writs can be issued against both judicial and administrative authorities?',
+            question_type: 'mcq',
+            options: ['Habeas Corpus', 'Mandamus', 'Prohibition', 'Certiorari'],
+            correct_answer: 1,
+            points: 10,
+            explanation: 'Mandamus can be issued against both judicial and administrative authorities to compel performance of duty.',
+            difficulty: 'hard',
+          },
+        ];
+        
+        setQuestions(demoQuestions);
+        setUserAnswers(new Array(demoQuestions.length).fill(null));
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await SupabaseService.getMissionContent(missionId as string, 'test');
       if (result.success && result.content.test_questions) {
         setQuestions(result.content.test_questions);

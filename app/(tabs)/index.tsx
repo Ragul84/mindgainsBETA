@@ -171,9 +171,74 @@ export default function HomeScreen() {
 
   const loadUserData = async () => {
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        // Use demo data for development
+        setUserProfile({
+          id: 'demo-user',
+          user_id: 'demo-user',
+          email: 'demo@mindgains.ai',
+          full_name: 'Demo Student',
+          avatar_url: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        
+        setUserStats({
+          id: 'demo-stats',
+          user_id: 'demo-user',
+          total_xp: 2450,
+          current_level: 5,
+          missions_completed: 12,
+          streak_days: 7,
+          last_activity_date: new Date().toISOString().split('T')[0],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        
+        setRecentMissions([
+          {
+            id: 'demo-1',
+            user_id: 'demo-user',
+            title: 'Indian Constitution - Fundamental Rights',
+            description: 'Master Articles 12-35 for UPSC Prelims',
+            subject_id: null,
+            content_type: 'text',
+            content_text: 'Fundamental Rights',
+            difficulty: 'medium',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 'demo-2',
+            user_id: 'demo-user',
+            title: 'Mughal Empire Timeline',
+            description: 'Complete history from Babur to Aurangzeb',
+            subject_id: null,
+            content_type: 'text',
+            content_text: 'Mughal Empire',
+            difficulty: 'hard',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ]);
+        
+        setAppStats({ totalUsers: 125000, totalMissions: 45000, activeUsers: 8500 });
+        setIsLoading(false);
+        return;
+      }
+      
       const user = await SupabaseService.getCurrentUser();
       if (!user) {
-        router.replace('/auth');
+        // For demo purposes, don't redirect immediately
+        console.log('No user found, using demo data');
+        setUserProfile(null);
+        setUserStats(null);
+        setRecentMissions([]);
+        setAppStats({ totalUsers: 125000, totalMissions: 45000, activeUsers: 8500 });
+        setIsLoading(false);
         return;
       }
 

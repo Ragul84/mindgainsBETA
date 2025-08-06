@@ -157,9 +157,42 @@ export default function ProfileScreen() {
 
   const loadUserData = async () => {
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        // Use demo profile data
+        setUserProfile({
+          id: 'demo-user',
+          user_id: 'demo-user',
+          email: 'demo@mindgains.ai',
+          full_name: 'Demo Student',
+          avatar_url: null,
+          bio: 'UPSC Aspirant • 3rd Year College Student',
+          created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ago
+          updated_at: new Date().toISOString(),
+        });
+        
+        setUserStats({
+          id: 'demo-stats',
+          user_id: 'demo-user',
+          total_xp: 2450,
+          current_level: 5,
+          missions_completed: 12,
+          streak_days: 7,
+          last_activity_date: new Date().toISOString().split('T')[0],
+          rank: 'Advanced Learner',
+          total_study_time: 1800, // 30 hours in minutes
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        
+        setIsLoading(false);
+        return;
+      }
+      
       const user = await SupabaseService.getCurrentUser();
       if (!user) {
-        router.replace('/auth');
+        console.log('No user found for profile');
+        setIsLoading(false);
         return;
       }
 

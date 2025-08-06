@@ -1,5 +1,6 @@
 import { SupabaseService } from './supabaseService';
 import { AnalyticsService } from './analyticsService';
+import { demoAppStats } from './demoData';
 
 export interface MarketingMetrics {
   totalUsers: number;
@@ -16,6 +17,25 @@ export class MarketingService {
   // Get comprehensive marketing metrics
   static async getMarketingMetrics(): Promise<MarketingMetrics> {
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        return {
+          totalUsers: demoAppStats.totalUsers,
+          activeUsers: demoAppStats.activeUsers,
+          totalMissions: demoAppStats.totalMissions,
+          averageSessionTime: 18.5,
+          retentionRate: 84.2,
+          conversionRate: 15.7,
+          topSubjects: [
+            { name: 'UPSC', count: 45678 },
+            { name: 'JEE/NEET', count: 34567 },
+            { name: 'Banking', count: 28901 },
+            { name: 'SSC', count: 23456 },
+          ],
+          userGrowth: this.generateGrowthData(),
+        };
+      }
+      
       const appStats = await SupabaseService.getAppStats();
       
       // Calculate additional metrics (these would be real queries in production)

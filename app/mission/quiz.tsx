@@ -71,6 +71,44 @@ export default function QuizArenaScreen() {
 
   const loadQuizContent = async () => {
     try {
+      // Check if Supabase is configured or if it's a demo mission
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL || (missionId as string).startsWith('demo_')) {
+        // Use demo quiz questions
+        const demoQuestions: QuizQuestion[] = [
+          {
+            id: 'q1',
+            question: 'Which Article of the Indian Constitution guarantees Right to Equality?',
+            options: ['Article 12', 'Article 14', 'Article 16', 'Article 19'],
+            correct_answer: 1,
+            explanation: 'Article 14 guarantees equality before law and equal protection of laws to all persons.',
+            difficulty: 'medium',
+            points: 10,
+          },
+          {
+            id: 'q2',
+            question: 'How many fundamental freedoms are guaranteed under Article 19?',
+            options: ['Four', 'Five', 'Six', 'Seven'],
+            correct_answer: 2,
+            explanation: 'Article 19 guarantees six fundamental freedoms to all citizens of India.',
+            difficulty: 'easy',
+            points: 10,
+          },
+          {
+            id: 'q3',
+            question: 'Which writ is known as the "bulwark of personal liberty"?',
+            options: ['Mandamus', 'Prohibition', 'Habeas Corpus', 'Certiorari'],
+            correct_answer: 2,
+            explanation: 'Habeas Corpus protects against illegal detention and is called the bulwark of personal liberty.',
+            difficulty: 'hard',
+            points: 15,
+          },
+        ];
+        
+        setQuestions(demoQuestions);
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await SupabaseService.getMissionContent(missionId as string, 'quiz');
       if (result.success && result.content.quiz_questions) {
         setQuestions(result.content.quiz_questions);

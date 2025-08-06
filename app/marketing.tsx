@@ -26,6 +26,7 @@ import MascotAvatar from '@/components/ui/MascotAvatar';
 import GradientButton from '@/components/ui/GradientButton';
 import { MarketingService, type MarketingMetrics } from '@/utils/marketingService';
 import { AnalyticsService } from '@/utils/analyticsService';
+import { demoMarketingData } from '@/utils/demoData';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,6 +51,33 @@ export default function MarketingScreen() {
 
   const loadMarketingData = async () => {
     try {
+      // Check if Supabase is configured
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        // Use demo marketing data
+        const demoMetrics: MarketingMetrics = {
+          totalUsers: 156789,
+          activeUsers: 12456,
+          totalMissions: 89234,
+          averageSessionTime: 18.5,
+          retentionRate: 84.2,
+          conversionRate: 15.7,
+          topSubjects: [
+            { name: 'UPSC', count: 45678 },
+            { name: 'JEE/NEET', count: 34567 },
+            { name: 'Banking', count: 28901 },
+            { name: 'SSC', count: 23456 },
+          ],
+          userGrowth: demoMarketingData.userGrowth.map(item => ({
+            date: item.month,
+            count: item.users,
+          })),
+        };
+        
+        setMetrics(demoMetrics);
+        setIsLoading(false);
+        return;
+      }
+      
       const marketingMetrics = await MarketingService.getMarketingMetrics();
       setMetrics(marketingMetrics);
       

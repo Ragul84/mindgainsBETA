@@ -3,26 +3,85 @@
     "name": "MindGains AI",
     "slug": "mindgains-ai",
     "version": "1.0.0",
+    "description": "India's #1 AI-powered learning platform for competitive exams. Transform any content into interactive learning missions.",
+    "keywords": ["education", "ai", "learning", "upsc", "jee", "neet", "banking", "competitive exams", "india"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mindgains",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "primaryColor": "#8b5cf6",
+    "backgroundColor": "#0f0f23",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mindgains.ai",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "UIBackgroundModes": ["background-processing"],
+        "NSCameraUsageDescription": "Take photos of study materials to create learning missions",
+        "NSPhotoLibraryUsageDescription": "Select images from your photo library for learning content"
+      }
+    },
+    "android": {
+      "package": "com.mindgains.ai",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#0f0f23"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "MindGains AI - India's #1 AI Learning Platform",
+      "shortName": "MindGains AI",
+      "lang": "en",
+      "scope": "/",
+      "themeColor": "#8b5cf6",
+      "backgroundColor": "#0f0f23",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "preferRelatedApplications": true
     },
-    "plugins": ["expo-router", "expo-font", "expo-web-browser"],
+    "plugins": [
+      "expo-router", 
+      "expo-font", 
+      "expo-web-browser",
+      "expo-camera",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#0f0f23"
+      "backgroundColor": "#0f0f23",
+      "image": "./assets/images/icon.png"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "mindgains-ai-project"
+      }
     }
   }
 }
