@@ -22,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Brain, Sparkles, Zap, Target, BookOpen, Trophy, Crown, Star } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
+import { SupabaseService } from '@/utils/supabaseService';
 
 const { width, height } = Dimensions.get('window');
 
