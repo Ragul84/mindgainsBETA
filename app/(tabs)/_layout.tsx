@@ -1,25 +1,13 @@
 import { Tabs } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, StyleSheet, Platform, StatusBar, Text } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { 
-  faHome,
-  faGraduationCap,
-  faPlus,
-  faTrophy,
-  faUser,
-  faBookOpen,
-  faChartLine,
-  faMedal,
-  faUserGraduate
-} from '@fortawesome/pro-solid-svg-icons';
-import { 
-  faHome as faHomeLight,
-  faGraduationCap as faGraduationCapLight,
-  faPlus as faPlusLight,
-  faTrophy as faTrophyLight,
-  faUser as faUserLight
-} from '@fortawesome/pro-light-svg-icons';
+  Home,
+  GraduationCap,
+  Plus,
+  Trophy,
+  User
+} from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import Animated, {
   useAnimatedStyle,
@@ -102,10 +90,10 @@ export default function TabLayout() {
             title: 'Home',
             tabBarIcon: ({ color, focused }) => (
               <View style={[styles.iconContainer, focused && styles.focusedIcon]}>
-                <FontAwesomeIcon
-                  icon={focused ? faHome : faHomeLight}
+                <Home
                   size={Platform.OS === 'android' ? 22 : 24}
                   color={color}
+                  fill={focused ? color : 'transparent'}
                 />
                 {focused && Platform.OS === 'android' && (
                   <View style={[styles.androidIndicator, { backgroundColor: color }]} />
@@ -120,10 +108,10 @@ export default function TabLayout() {
             title: 'Learn',
             tabBarIcon: ({ color, focused }) => (
               <View style={[styles.iconContainer, focused && styles.focusedIcon]}>
-                <FontAwesomeIcon
-                  icon={focused ? faGraduationCap : faGraduationCapLight}
+                <GraduationCap
                   size={Platform.OS === 'android' ? 22 : 24}
                   color={color}
+                  fill={focused ? color : 'transparent'}
                 />
                 {focused && Platform.OS === 'android' && (
                   <View style={[styles.androidIndicator, { backgroundColor: color }]} />
@@ -146,8 +134,7 @@ export default function TabLayout() {
                     focused && styles.createButtonFocused
                   ]}
                 >
-                  <FontAwesomeIcon
-                    icon={faPlus}
+                  <Plus
                     size={Platform.OS === 'android' ? 20 : 22}
                     color={theme.colors.text.primary}
                   />
@@ -170,10 +157,10 @@ export default function TabLayout() {
             title: 'Achievements',
             tabBarIcon: ({ color, focused }) => (
               <View style={[styles.iconContainer, focused && styles.focusedIcon]}>
-                <FontAwesomeIcon
-                  icon={focused ? faTrophy : faTrophyLight}
+                <Trophy
                   size={Platform.OS === 'android' ? 22 : 24}
                   color={color}
+                  fill={focused ? color : 'transparent'}
                 />
                 {focused && Platform.OS === 'android' && (
                   <View style={[styles.androidIndicator, { backgroundColor: color }]} />
@@ -188,10 +175,10 @@ export default function TabLayout() {
             title: 'Profile',
             tabBarIcon: ({ color, focused }) => (
               <View style={[styles.iconContainer, focused && styles.focusedIcon]}>
-                <FontAwesomeIcon
-                  icon={focused ? faUser : faUserLight}
+                <User
                   size={Platform.OS === 'android' ? 22 : 24}
                   color={color}
+                  fill={focused ? color : 'transparent'}
                 />
                 {focused && Platform.OS === 'android' && (
                   <View style={[styles.androidIndicator, { backgroundColor: color }]} />
