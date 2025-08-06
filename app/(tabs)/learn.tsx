@@ -40,6 +40,23 @@ import {
   Brain,
   ArrowRight
 } from 'lucide-react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { 
+  faSearch,
+  faFilter,
+  faBook,
+  faClock,
+  faUsers,
+  faStar,
+  faPlay,
+  faBookmark,
+  faChartLine,
+  faSparkles,
+  faBolt,
+  faCrown,
+  faTarget,
+  faBrain
+} from '@fortawesome/pro-solid-svg-icons';
 import { theme } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');

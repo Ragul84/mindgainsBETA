@@ -8,7 +8,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles } from 'lucide-react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faSparkles } from '@fortawesome/pro-solid-svg-icons';
 import { theme } from '@/constants/theme';
 
 interface MascotAvatarProps {
@@ -144,10 +145,10 @@ export default function MascotAvatar({
             />
           ) : (
             <View style={styles.placeholderContainer}>
-              <Sparkles
-                size={size * 0.4}
+              <FontAwesomeIcon
+                icon={faSparkles}
+                size={size * 0.3}
                 color={theme.colors.text.primary}
-                strokeWidth={2}
               />
             </View>
           )}
@@ -167,10 +168,10 @@ export default function MascotAvatar({
                   },
                 ]}
               >
-                <Sparkles
-                  size={8}
+                <FontAwesomeIcon
+                  icon={faSparkles}
+                  size={6}
                   color={theme.colors.accent.yellow}
-                  strokeWidth={2}
                 />
               </Animated.View>
             ))}

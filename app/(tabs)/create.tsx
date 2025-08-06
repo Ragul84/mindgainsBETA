@@ -20,6 +20,19 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Youtube, FileText, Type, Camera, Sparkles, ArrowRight, Upload, Link, CircleCheck as CheckCircle, Zap } from 'lucide-react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { 
+  faYoutube,
+  faFileText,
+  faKeyboard,
+  faCamera,
+  faSparkles,
+  faArrowRight,
+  faUpload,
+  faLink,
+  faCheckCircle,
+  faBolt
+} from '@fortawesome/pro-solid-svg-icons';
 import { theme } from '@/constants/theme';
 import MascotAvatar from '@/components/ui/MascotAvatar';
 import GradientButton from '@/components/ui/GradientButton';

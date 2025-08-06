@@ -36,6 +36,21 @@ import {
   ArrowLeft,
   Sparkles
 } from 'lucide-react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { 
+  faTrophy,
+  faStar,
+  faTarget,
+  faBolt,
+  faCrown,
+  faMedal,
+  faAward,
+  faFire,
+  faBrain,
+  faBook,
+  faClock,
+  faUsers
+} from '@fortawesome/pro-solid-svg-icons';
 import { theme } from '@/constants/theme';
 import CircleProgress from '@/components/ui/CircleProgress';
 import MascotAvatar from '@/components/ui/MascotAvatar';

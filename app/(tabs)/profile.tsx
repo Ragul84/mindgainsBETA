@@ -25,6 +25,31 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { User, Settings, Trophy, Star, Crown, Bell, Shield, CircleHelp as HelpCircle, LogOut, CreditCard as Edit3, Calendar, Target, Zap, BookOpen, ChevronRight, Share2, Camera, Mail, Phone, MapPin, Globe, Briefcase } from 'lucide-react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { 
+  faUser,
+  faCog,
+  faTrophy,
+  faStar,
+  faCrown,
+  faBell,
+  faShield,
+  faQuestionCircle,
+  faSignOut,
+  faEdit,
+  faCalendar,
+  faTarget,
+  faBolt,
+  faBook,
+  faChevronRight,
+  faShare,
+  faCamera,
+  faEnvelope,
+  faPhone,
+  faMapPin,
+  faGlobe,
+  faBriefcase
+} from '@fortawesome/pro-solid-svg-icons';
 import { theme } from '@/constants/theme';
 import MascotAvatar from '@/components/ui/MascotAvatar';
 import CircleProgress from '@/components/ui/CircleProgress';
