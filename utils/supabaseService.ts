@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import 'react-native-url-polyfill/auto'
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || ''
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iyguhaxhomtcjafvfupu.supabase.co'
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
 
 // Only create client if environment variables are available
-export const supabase = supabaseUrl && supabaseAnonKey 
+export const supabase = supabaseUrl && supabaseAnonKey && supabaseAnonKey !== 'your_supabase_anon_key_here'
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
