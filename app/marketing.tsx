@@ -20,25 +20,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
-import { 
-  Brain,
-  Sparkles,
-  Trophy,
-  Users,
-  Star,
-  Target,
-  Zap,
-  Crown,
-  BookOpen,
-  TrendingUp,
-  Download,
-  Share2,
-  Play,
-  CheckCircle,
-  ArrowRight,
-  Globe,
-  Smartphone
-} from 'lucide-react-native';
+import { Brain, Sparkles, Trophy, Users, Star, Target, Zap, Crown, BookOpen, TrendingUp, Download, Share2, Play, CircleCheck as CheckCircle, ArrowRight, Globe, Smartphone } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import MascotAvatar from '@/components/ui/MascotAvatar';
 import GradientButton from '@/components/ui/GradientButton';
