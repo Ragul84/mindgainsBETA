@@ -1,20 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 import 'react-native-url-polyfill/auto'
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://iyguhaxhomtcjafvfupu.supabase.co'
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
 
-// Only create client if environment variables are available
-export const supabase = supabaseUrl && supabaseAnonKey && supabaseAnonKey !== 'your_supabase_anon_key_here'
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export interface UserProfile {
   id: string;
-  email: string;
+  user_id: string;
+  email?: string;
   full_name?: string;
   avatar_url?: string;
-  bio?: string;
   created_at: string;
   updated_at: string;
 }
@@ -27,8 +28,6 @@ export interface UserStats {
   missions_completed: number;
   streak_days: number;
   last_activity_date: string;
-  rank: string;
-  total_study_time: number;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +63,15 @@ export interface MissionProgress {
   updated_at: string;
 }
 
+export interface Subject {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  created_at: string;
+}
+
 export interface Achievement {
   id: string;
   title: string;
@@ -72,7 +80,7 @@ export interface Achievement {
   category: 'learning' | 'speed' | 'streak' | 'social' | 'mastery';
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   xp_reward: number;
-  criteria: any;
+  criteria?: any;
   created_at: string;
 }
 
@@ -80,21 +88,15 @@ export interface UserAchievement {
   id: string;
   user_id: string;
   achievement_id: string;
-  progress: number;
-  total_required: number;
-  unlocked: boolean;
-  unlocked_at?: string;
-  created_at: string;
-  achievements?: Achievement;
+  achievement_title?: string;
+  achievement_description?: string;
+  achievement_icon?: string;
+  earned_at: string;
 }
 
 export class SupabaseService {
   // Authentication
   static async signUp(email: string, password: string, fullName?: string) {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized. Please check your environment variables.')
-    }
-    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -107,7 +109,7 @@ export class SupabaseService {
 
     if (error) throw error
 
-    // Create profile using Edge Function to bypass RLS
+    // Create profile using Edge Function
     if (data.user) {
       try {
         const { data: profileData, error: profileError } = await supabase.functions.invoke('create-user-profile', {
@@ -119,16 +121,10 @@ export class SupabaseService {
         })
 
         if (profileError) {
-          console.error('Error creating profile via Edge Function:', profileError)
-          throw profileError
-        }
-
-        if (!profileData?.success) {
-          throw new Error(profileData?.error || 'Failed to create user profile')
+          console.error('Error creating profile:', profileError)
         }
       } catch (profileError) {
         console.error('Profile creation failed:', profileError)
-        // Don't throw here to allow user to continue, they can complete profile later
       }
     }
 
@@ -136,10 +132,6 @@ export class SupabaseService {
   }
 
   static async signIn(email: string, password: string) {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized. Please check your environment variables.')
-    }
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -150,104 +142,40 @@ export class SupabaseService {
   }
 
   static async signOut() {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized. Please check your environment variables.')
-    }
-    
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
 
   static async getCurrentUser() {
-    if (!supabase) {
-      return null
-    }
-    
     const { data: { user }, error } = await supabase.auth.getUser()
-    
-    // Handle the case where there's no auth session - this is normal for unauthenticated users
-    if (error && error.message === 'Auth session missing!') {
-      return null
-    }
-    
-    if (error) throw error
+    if (error && error.message !== 'Auth session missing!') throw error
     return user
   }
 
   // Profile Management
   static async getProfile(userId: string): Promise<UserProfile | null> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
 
-      if (error) {
-        console.error('Error fetching profile:', error)
-        
-        // If profile doesn't exist, create it
-        if (error.code === 'PGRST116') {
-          return await this.createProfileForExistingUser(userId)
-        }
-        
-        return null
-      }
-
-      // If no profile exists, create one
-      if (!data) {
-        return await this.createProfileForExistingUser(userId)
-      }
-
-      return data
-    } catch (error) {
-      console.error('Error in getProfile:', error)
+    if (error) {
+      console.error('Error fetching profile:', error)
       return null
     }
-  }
 
-  // Create profile for existing authenticated user
-  static async createProfileForExistingUser(userId: string): Promise<UserProfile | null> {
-    try {
-      // Get user email from auth
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || user.id !== userId) {
-        throw new Error('User not authenticated')
-      }
-
-      const { data: profileData, error: profileError } = await supabase.functions.invoke('create-user-profile', {
-        body: {
-          userId: user.id,
-          email: user.email,
-          fullName: user.user_metadata?.full_name
-        }
-      })
-
-      if (profileError) {
-        console.error('Error creating profile for existing user:', profileError)
-        return null
-      }
-
-      if (!profileData?.success) {
-        console.error('Profile creation failed:', profileData?.error)
-        return null
-      }
-
-      return profileData.profile
-    } catch (error) {
-      console.error('Failed to create profile for existing user:', error)
-      return null
-    }
+    return data
   }
 
   static async updateProfile(userId: string, updates: Partial<UserProfile>) {
     const { data, error } = await supabase
       .from('profiles')
-      .upsert({ 
-        id: userId, 
+      .update({ 
         ...updates,
         updated_at: new Date().toISOString()
       })
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -257,76 +185,18 @@ export class SupabaseService {
 
   // User Stats
   static async getUserStats(userId: string): Promise<UserStats | null> {
-    try {
-      const { data, error } = await supabase
-        .from('user_stats')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle()
+    const { data, error } = await supabase
+      .from('user_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
 
-      if (error) {
-        console.error('Error fetching user stats:', error)
-        
-        // If stats don't exist, create them
-        if (error.code === 'PGRST116') {
-          return await this.initializeUserStats(userId)
-        }
-        
-        return null
-      }
-
-      // If no stats exist for this user, create initial stats
-      if (!data) {
-        return await this.initializeUserStats(userId)
-      }
-
-      return data
-    } catch (error) {
-      console.error('Error in getUserStats:', error)
+    if (error) {
+      console.error('Error fetching user stats:', error)
       return null
     }
-  }
 
-  // Initialize user stats for new users
-  static async initializeUserStats(userId: string): Promise<UserStats | null> {
-    try {
-      const { data, error } = await supabase
-        .from('user_stats')
-        .insert({
-          user_id: userId,
-          total_xp: 0,
-          current_level: 1,
-          missions_completed: 0,
-          streak_days: 0,
-          last_activity_date: new Date().toISOString().split('T')[0], // Today's date
-          rank: 'Beginner',
-          total_study_time: 0,
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error initializing user stats:', error)
-        
-        // If there's a conflict (stats already exist), try to fetch them
-        if (error.code === '23505') {
-          const { data: existingStats } = await supabase
-            .from('user_stats')
-            .select('*')
-            .eq('user_id', userId)
-            .single()
-          
-          return existingStats || null
-        }
-        
-        return null
-      }
-
-      return data
-    } catch (error) {
-      console.error('Failed to initialize user stats:', error)
-      return null
-    }
+    return data
   }
 
   // Missions
@@ -338,6 +208,8 @@ export class SupabaseService {
     content_text?: string;
     subject_name?: string;
     difficulty?: 'easy' | 'medium' | 'hard';
+    contentType?: string;
+    examFocus?: string;
   }) {
     const { data, error } = await supabase.functions.invoke('create-mission', {
       body: missionData,
@@ -350,11 +222,7 @@ export class SupabaseService {
   static async getUserMissions(userId: string, limit = 10): Promise<Mission[]> {
     const { data, error } = await supabase
       .from('missions')
-      .select(`
-        *,
-        subjects(name, icon, color),
-        mission_progress(room_type, status, score, max_score)
-      `)
+      .select('*')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(limit)
@@ -376,7 +244,7 @@ export class SupabaseService {
     return data
   }
 
-  // Progress Tracking - Fixed implementation
+  // Progress Tracking
   static async updateProgress(progressData: {
     mission_id: string;
     room_type: 'clarity' | 'quiz' | 'memory' | 'test';
@@ -385,36 +253,21 @@ export class SupabaseService {
     time_spent: number;
     completed: boolean;
   }) {
-    try {
-      // Get current user session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError || !session) {
-        throw new Error('User not authenticated')
-      }
-
-      // Call the edge function with proper authorization
-      const { data, error } = await supabase.functions.invoke('update-progress', {
-        body: progressData,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      })
-
-      if (error) {
-        console.error('Edge function error:', error)
-        throw error
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to update progress')
-      }
-
-      return data
-    } catch (error) {
-      console.error('Error in updateProgress:', error)
-      throw error
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
+      throw new Error('User not authenticated')
     }
+
+    const { data, error } = await supabase.functions.invoke('update-progress', {
+      body: progressData,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    if (error) throw error
+    return data
   }
 
   static async getMissionProgress(userId: string, missionId: string): Promise<MissionProgress[]> {
@@ -436,12 +289,9 @@ export class SupabaseService {
   static async getUserAchievements(userId: string): Promise<UserAchievement[]> {
     const { data, error } = await supabase
       .from('user_achievements')
-      .select(`
-        *,
-        achievements(*)
-      `)
+      .select('*')
       .eq('user_id', userId)
-      .order('unlocked_at', { ascending: false })
+      .order('earned_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching achievements:', error)
@@ -465,16 +315,8 @@ export class SupabaseService {
     return data || []
   }
 
-  // Dashboard Data
-  static async getDashboardData(userId: string) {
-    const { data, error } = await supabase.functions.invoke('get-user-dashboard')
-
-    if (error) throw error
-    return data
-  }
-
   // Subjects
-  static async getSubjects() {
+  static async getSubjects(): Promise<Subject[]> {
     const { data, error } = await supabase
       .from('subjects')
       .select('*')
@@ -531,18 +373,59 @@ export class SupabaseService {
       .subscribe()
   }
 
-  // Helper method to ensure user has complete profile and stats
-  static async ensureUserDataExists(userId: string): Promise<{ profile: UserProfile | null; stats: UserStats | null }> {
+  // Analytics for marketing
+  static async trackUserActivity(userId: string, activity: string, metadata?: any) {
     try {
-      const [profile, stats] = await Promise.all([
-        this.getProfile(userId),
-        this.getUserStats(userId)
-      ])
+      // Update last activity date
+      await supabase
+        .from('user_stats')
+        .update({ 
+          last_activity_date: new Date().toISOString().split('T')[0],
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
 
-      return { profile, stats }
+      // Log activity for analytics (you can expand this)
+      console.log(`User ${userId} performed: ${activity}`, metadata)
     } catch (error) {
-      console.error('Error ensuring user data exists:', error)
-      return { profile: null, stats: null }
+      console.error('Error tracking activity:', error)
+    }
+  }
+
+  // Marketing features
+  static async getAppStats() {
+    try {
+      // Get total users
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+
+      // Get total missions
+      const { count: totalMissions } = await supabase
+        .from('missions')
+        .select('*', { count: 'exact', head: true })
+
+      // Get active users (last 7 days)
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      
+      const { count: activeUsers } = await supabase
+        .from('user_stats')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_activity_date', sevenDaysAgo.toISOString().split('T')[0])
+
+      return {
+        totalUsers: totalUsers || 0,
+        totalMissions: totalMissions || 0,
+        activeUsers: activeUsers || 0,
+      }
+    } catch (error) {
+      console.error('Error fetching app stats:', error)
+      return {
+        totalUsers: 0,
+        totalMissions: 0,
+        activeUsers: 0,
+      }
     }
   }
 }

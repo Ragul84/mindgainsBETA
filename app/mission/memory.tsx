@@ -124,6 +124,12 @@ export default function MemoryForgeScreen() {
 
   const completeMemorySession = async () => {
     try {
+      const user = await SupabaseService.getCurrentUser();
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
       const totalCards = flashcards.length;
       const score = Math.round((correctCount / totalCards) * 100);
       
@@ -134,6 +140,16 @@ export default function MemoryForgeScreen() {
         max_score: 100,
         time_spent: timeSpent,
         completed: true,
+      });
+
+      // Track memory session completion
+      await SupabaseService.trackUserActivity(user.id, 'room_completed', {
+        missionId: missionId as string,
+        roomType: 'memory',
+        correctCount,
+        totalCards,
+        accuracy: score,
+        timeSpent
       });
 
       setIsCompleted(true);

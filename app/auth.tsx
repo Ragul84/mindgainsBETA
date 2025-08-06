@@ -119,10 +119,15 @@ export default function AuthScreen() {
       if (isLogin) {
         const { user, error } = await SupabaseService.signIn(email, password);
         if (error || !user) throw new Error(error?.message || 'Login failed');
+        
+        // Track successful login
+        await SupabaseService.trackUserActivity(user.id, 'sign_in');
+        
         router.replace('/(tabs)');
       } else {
         const { error } = await SupabaseService.signUp(email, password, fullName);
         if (error) throw new Error(error.message);
+        
         setPopup({
           visible: true,
           title: 'Account Created',

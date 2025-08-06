@@ -209,6 +209,12 @@ export default function CreateScreen() {
     setIsLoading(true);
 
     try {
+      const user = await SupabaseService.getCurrentUser();
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
       const missionData = {
         title: title.trim(),
         description: `AI-powered learning mission: ${title}`,
@@ -227,6 +233,13 @@ export default function CreateScreen() {
         setCreatedMissionId(result.mission.id);
         setIsSuccess(true);
         successScale.value = withSpring(1, { damping: 12, stiffness: 100 });
+        
+        // Track mission creation
+        await SupabaseService.trackUserActivity(user.id, 'mission_created', {
+          missionId: result.mission.id,
+          contentType: selectedMethod,
+          title: title.trim()
+        });
         
         // Navigate to mission after delay
         setTimeout(() => {

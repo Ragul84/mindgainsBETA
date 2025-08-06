@@ -130,6 +130,12 @@ export default function QuizArenaScreen() {
 
   const completeQuiz = async () => {
     try {
+      const user = await SupabaseService.getCurrentUser();
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
       const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
       
       await SupabaseService.updateProgress({
@@ -139,6 +145,15 @@ export default function QuizArenaScreen() {
         max_score: totalPoints,
         time_spent: timeSpent,
         completed: true,
+      });
+
+      // Track quiz completion
+      await SupabaseService.trackUserActivity(user.id, 'room_completed', {
+        missionId: missionId as string,
+        roomType: 'quiz',
+        score,
+        totalPoints,
+        timeSpent
       });
 
       setIsCompleted(true);

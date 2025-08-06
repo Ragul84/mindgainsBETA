@@ -136,6 +136,12 @@ export default function ClarityRoomScreen() {
 
   const handleContinue = async () => {
     try {
+      const user = await SupabaseService.getCurrentUser();
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
       // Update progress
       await SupabaseService.updateProgress({
         mission_id: missionId as string,
@@ -144,6 +150,13 @@ export default function ClarityRoomScreen() {
         max_score: 100,
         time_spent: timeSpent,
         completed: true,
+      });
+
+      // Track room completion
+      await SupabaseService.trackUserActivity(user.id, 'room_completed', {
+        missionId: missionId as string,
+        roomType: 'clarity',
+        timeSpent
       });
 
       // Navigate to quiz

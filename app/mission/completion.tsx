@@ -22,6 +22,8 @@ import { Trophy, Star, Clock, Target, Brain, Zap, Chrome as Home, Share2 } from 
 import { theme } from '@/constants/theme';
 import MascotAvatar from '@/components/ui/MascotAvatar';
 import GradientButton from '@/components/ui/GradientButton';
+import ShareModal from '@/components/ui/ShareModal';
+import { SupabaseService } from '@/utils/supabaseService';
 
 export default function MissionCompletionScreen() {
   const params = useLocalSearchParams();
@@ -32,6 +34,7 @@ export default function MissionCompletionScreen() {
   const statsOpacity = useSharedValue(0);
   const confettiOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     // Celebration animation sequence
@@ -103,8 +106,7 @@ export default function MissionCompletionScreen() {
   };
 
   const handleShareResults = () => {
-    // Share functionality would be implemented here
-    console.log('Share results');
+    setShowShareModal(true);
   };
 
   const score = parseInt(finalScore as string) || 0;
@@ -308,6 +310,18 @@ export default function MissionCompletionScreen() {
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      
+      {/* Share Modal */}
+      <ShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        type="score"
+        score={{
+          percentage: score,
+          subject: 'Mission Completed',
+          timeSpent: timeInMinutes * 60
+        }}
+      />
     </LinearGradient>
   );
 }

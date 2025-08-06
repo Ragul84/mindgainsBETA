@@ -170,6 +170,9 @@ export default function ProfileScreen() {
 
       setUserProfile(profile);
       setUserStats(stats);
+      
+      // Track profile view for analytics
+      await SupabaseService.trackUserActivity(user.id, 'profile_view');
     } catch (error) {
       console.error('Error loading user data:', error);
       Alert.alert('Error', 'Failed to load profile data');
@@ -192,6 +195,10 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              const user = await SupabaseService.getCurrentUser();
+              if (user) {
+                await SupabaseService.trackUserActivity(user.id, 'sign_out');
+              }
               await SupabaseService.signOut();
               router.replace('/auth');
             } catch (error) {

@@ -122,6 +122,7 @@ export default function HomeScreen() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [recentMissions, setRecentMissions] = useState<Mission[]>([]);
+  const [appStats, setAppStats] = useState({ totalUsers: 0, totalMissions: 0, activeUsers: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -176,15 +177,20 @@ export default function HomeScreen() {
         return;
       }
 
-      const [profile, stats, missions] = await Promise.all([
+      const [profile, stats, missions, globalStats] = await Promise.all([
         SupabaseService.getProfile(user.id),
         SupabaseService.getUserStats(user.id),
-        SupabaseService.getUserMissions(user.id, 5)
+        SupabaseService.getUserMissions(user.id, 5),
+        SupabaseService.getAppStats()
       ]);
 
       setUserProfile(profile);
       setUserStats(stats);
       setRecentMissions(missions);
+      setAppStats(globalStats);
+      
+      // Track user activity for analytics
+      await SupabaseService.trackUserActivity(user.id, 'dashboard_view');
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
@@ -311,6 +317,9 @@ export default function HomeScreen() {
               <Text style={styles.welcomeText}>Namaste,</Text>
               <Text style={styles.userName}>
                 {userProfile?.full_name ? `${userProfile.full_name.split(' ')[0]}! 🚀` : 'Ready to learn? 🚀'}
+              </Text>
+              <Text style={styles.userSubtext}>
+                Join {appStats.totalUsers.toLocaleString()}+ students mastering competitive exams
               </Text>
             </View>
             <Animated.View style={[mascotAnimatedStyle, glowAnimatedStyle]}>
@@ -799,6 +808,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: theme.fonts.heading,
     color: theme.colors.text.primary,
+    marginTop: theme.spacing.xs,
+  },
+  userSubtext: {
+    fontSize: 12,
+    fontFamily: theme.fonts.caption,
+    color: theme.colors.text.tertiary,
     marginTop: theme.spacing.xs,
   },
   statsContainer: {

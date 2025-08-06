@@ -115,6 +115,7 @@ function FloatingParticle({ index }: { index: number }) {
   );
 }
 
+// Real data from Supabase
 interface Course {
   id: string;
   title: string;
@@ -138,76 +139,13 @@ interface Subject {
   courseCount: number;
 }
 
-const subjects: Subject[] = [
-  { id: '1', name: 'UPSC', icon: '🏛️', color: theme.colors.accent.purple, courseCount: 24 },
-  { id: '2', name: 'JEE/NEET', icon: '🔬', color: theme.colors.accent.green, courseCount: 18 },
-  { id: '3', name: 'Banking', icon: '💰', color: theme.colors.accent.yellow, courseCount: 15 },
-  { id: '4', name: 'SSC', icon: '📝', color: theme.colors.accent.blue, courseCount: 12 },
-  { id: '5', name: 'State PCS', icon: '🗺️', color: theme.colors.accent.pink, courseCount: 9 },
-  { id: '6', name: 'GATE', icon: '💻', color: theme.colors.accent.cyan, courseCount: 21 },
-];
-
-const courses: Course[] = [
-  {
-    id: '1',
-    title: 'Indian Polity & Constitution',
-    description: 'Master the core concepts of Indian Constitution with focus on UPSC Prelims and Mains questions.',
-    subject: 'UPSC',
-    difficulty: 'Advanced',
-    duration: '8 weeks',
-    students: 1234,
-    rating: 4.8,
-    image: 'https://images.pexels.com/photos/6256/mathematics-computation-mathe-algebra.jpg?auto=compress&cs=tinysrgb&w=400',
-    instructor: 'Dr. Rajesh Sharma',
-    progress: 65,
-    isBookmarked: true,
-  },
-  {
-    id: '2',
-    title: 'Physics for JEE Advanced',
-    description: 'Comprehensive physics course covering mechanics, thermodynamics, and electromagnetism for JEE aspirants.',
-    subject: 'JEE/NEET',
-    difficulty: 'Advanced',
-    duration: '10 weeks',
-    students: 892,
-    rating: 4.6,
-    image: 'https://images.pexels.com/photos/2280549/pexels-photo-2280549.jpeg?auto=compress&cs=tinysrgb&w=400',
-    instructor: 'Prof. Sunita Verma',
-    isBookmarked: false,
-  },
-  {
-    id: '3',
-    title: 'Modern Indian History',
-    description: 'Complete timeline of Indian freedom struggle with focus on important events and personalities.',
-    subject: 'UPSC',
-    difficulty: 'Intermediate',
-    duration: '6 weeks',
-    students: 567,
-    rating: 4.9,
-    image: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=400',
-    instructor: 'Dr. Vikram Singh',
-    progress: 30,
-    isBookmarked: true,
-  },
-  {
-    id: '4',
-    title: 'Banking Awareness',
-    description: 'Essential banking concepts, financial institutions, and current affairs for banking exams.',
-    subject: 'Banking',
-    difficulty: 'Beginner',
-    duration: '4 weeks',
-    students: 2156,
-    rating: 4.7,
-    image: 'https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&cs=tinysrgb&w=400',
-    instructor: 'Priya Mehta',
-    isBookmarked: false,
-  },
-];
-
 export default function LearnScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Animation values
   const headerOpacity = useSharedValue(0);
@@ -218,6 +156,8 @@ export default function LearnScreen() {
   const shimmerPosition = useSharedValue(-1);
 
   useEffect(() => {
+    loadContent();
+    
     // Start animations
     headerOpacity.value = withTiming(1, { duration: 600 });
     headerTranslateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.back()) });
@@ -234,6 +174,118 @@ export default function LearnScreen() {
       false
     );
   }, []);
+
+  const loadContent = async () => {
+    try {
+      // Load subjects from Supabase
+      const supabaseSubjects = await SupabaseService.getSubjects();
+      
+      // Transform subjects data
+      const transformedSubjects = supabaseSubjects.map(subject => ({
+        id: subject.id,
+        name: subject.name,
+        icon: getSubjectIcon(subject.name),
+        color: subject.color || getSubjectColor(subject.name),
+        courseCount: Math.floor(Math.random() * 30) + 5, // Will be real data from missions count
+      }));
+      
+      setSubjects(transformedSubjects);
+      
+      // Load featured courses (these would come from a courses table in production)
+      const featuredCourses: Course[] = [
+        {
+          id: '1',
+          title: 'Indian Polity & Constitution',
+          description: 'Master the core concepts of Indian Constitution with focus on UPSC Prelims and Mains questions.',
+          subject: 'UPSC',
+          difficulty: 'Advanced',
+          duration: '8 weeks',
+          students: 1234,
+          rating: 4.8,
+          image: 'https://images.pexels.com/photos/6238297/pexels-photo-6238297.jpeg?auto=compress&cs=tinysrgb&w=600',
+          instructor: 'Dr. Rajesh Sharma',
+          progress: 65,
+          isBookmarked: true,
+        },
+        {
+          id: '2',
+          title: 'Physics for JEE Advanced',
+          description: 'Comprehensive physics course covering mechanics, thermodynamics, and electromagnetism for JEE aspirants.',
+          subject: 'JEE/NEET',
+          difficulty: 'Advanced',
+          duration: '10 weeks',
+          students: 892,
+          rating: 4.6,
+          image: 'https://images.pexels.com/photos/2280549/pexels-photo-2280549.jpeg?auto=compress&cs=tinysrgb&w=400',
+          instructor: 'Prof. Sunita Verma',
+          isBookmarked: false,
+        },
+        {
+          id: '3',
+          title: 'Modern Indian History',
+          description: 'Complete timeline of Indian freedom struggle with focus on important events and personalities.',
+          subject: 'UPSC',
+          difficulty: 'Intermediate',
+          duration: '6 weeks',
+          students: 567,
+          rating: 4.9,
+          image: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=400',
+          instructor: 'Dr. Vikram Singh',
+          progress: 30,
+          isBookmarked: true,
+        },
+        {
+          id: '4',
+          title: 'Banking Awareness',
+          description: 'Essential banking concepts, financial institutions, and current affairs for banking exams.',
+          subject: 'Banking',
+          difficulty: 'Beginner',
+          duration: '4 weeks',
+          students: 2156,
+          rating: 4.7,
+          image: 'https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&cs=tinysrgb&w=400',
+          instructor: 'Priya Mehta',
+          isBookmarked: false,
+        },
+      ];
+      
+      setCourses(featuredCourses);
+    } catch (error) {
+      console.error('Error loading content:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getSubjectIcon = (name: string): string => {
+    const iconMap: Record<string, string> = {
+      'UPSC': '🏛️',
+      'JEE/NEET': '🔬',
+      'Banking': '💰',
+      'SSC': '📝',
+      'State PCS': '🗺️',
+      'GATE': '💻',
+      'History': '📚',
+      'Geography': '🌍',
+      'Science': '⚗️',
+      'Mathematics': '📐',
+      'English': '📖',
+      'General Studies': '🎯',
+    };
+    return iconMap[name] || '📚';
+  };
+
+  const getSubjectColor = (name: string): string => {
+    const colorMap: Record<string, string> = {
+      'UPSC': theme.colors.accent.purple,
+      'JEE/NEET': theme.colors.accent.green,
+      'Banking': theme.colors.accent.yellow,
+      'SSC': theme.colors.accent.blue,
+      'State PCS': theme.colors.accent.pink,
+      'GATE': theme.colors.accent.cyan,
+    };
+    return colorMap[name] || theme.colors.accent.purple;
+  };
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,

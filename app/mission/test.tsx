@@ -141,6 +141,12 @@ export default function TestTowerScreen() {
 
   const handleCompleteTest = async () => {
     try {
+      const user = await SupabaseService.getCurrentUser();
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
       const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
       const finalScore = Math.max(score, Math.round((score / totalPoints) * 100));
       
@@ -151,6 +157,14 @@ export default function TestTowerScreen() {
         max_score: 100,
         time_spent: timeSpent,
         completed: true,
+      });
+
+      // Track test completion and mission completion
+      await SupabaseService.trackUserActivity(user.id, 'mission_completed', {
+        missionId: missionId as string,
+        finalScore,
+        totalTimeSpent: timeSpent,
+        questionsAnswered: questions.length
       });
 
       setIsCompleted(true);

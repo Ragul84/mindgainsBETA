@@ -41,6 +41,9 @@ import CircleProgress from '@/components/ui/CircleProgress';
 
 const { width, height } = Dimensions.get('window');
 
+import { SupabaseService } from '@/utils/supabaseService';
+import type { Achievement, UserAchievement } from '@/utils/supabaseService';
+
 interface Achievement {
   id: string;
   title: string;
@@ -275,11 +278,15 @@ const achievements: Achievement[] = [
 
 export default function AchievementsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [userStats] = useState({
-    totalAchievements: achievements.length,
-    unlockedAchievements: achievements.filter(a => a.unlocked).length,
-    totalXP: achievements.filter(a => a.unlocked).reduce((sum, a) => sum + a.xpReward, 0),
-    rareAchievements: achievements.filter(a => a.unlocked && a.rarity !== 'common').length,
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
+  const [categories, setCategories] = useState<AchievementCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userStats, setUserStats] = useState({
+    totalAchievements: 0,
+    unlockedAchievements: 0,
+    totalXP: 0,
+    rareAchievements: 0,
   });
 
   // Animation values
@@ -292,6 +299,8 @@ export default function AchievementsScreen() {
   const trophyScale = useSharedValue(1);
 
   useEffect(() => {
+    loadAchievements();
+    
     // Start animations
     headerOpacity.value = withTiming(1, { duration: 600 });
     headerTranslateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.back()) });
@@ -317,6 +326,87 @@ export default function AchievementsScreen() {
       false
     );
   }, []);
+
+  const loadAchievements = async () => {
+    try {
+      const user = await SupabaseService.getCurrentUser();
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
+      const [allAchievements, userAchievementsList] = await Promise.all([
+        SupabaseService.getAllAchievements(),
+        SupabaseService.getUserAchievements(user.id)
+      ]);
+
+      setAchievements(allAchievements);
+      setUserAchievements(userAchievementsList);
+
+      // Calculate stats
+      const unlockedIds = new Set(userAchievementsList.map(ua => ua.achievement_id));
+      const unlockedAchievements = allAchievements.filter(a => unlockedIds.has(a.id));
+      const rareAchievements = unlockedAchievements.filter(a => a.rarity !== 'common');
+      const totalXP = unlockedAchievements.reduce((sum, a) => sum + a.xp_reward, 0);
+
+      setUserStats({
+        totalAchievements: allAchievements.length,
+        unlockedAchievements: unlockedAchievements.length,
+        totalXP,
+        rareAchievements: rareAchievements.length,
+      });
+
+      // Calculate categories
+      const categoryStats = [
+        {
+          id: 'learning',
+          name: 'Learning',
+          icon: <Brain size={20} color={theme.colors.text.primary} />,
+          color: theme.colors.accent.purple,
+          count: allAchievements.filter(a => a.category === 'learning').length,
+          unlockedCount: unlockedAchievements.filter(a => a.category === 'learning').length,
+        },
+        {
+          id: 'speed',
+          name: 'Speed',
+          icon: <Zap size={20} color={theme.colors.text.primary} />,
+          color: theme.colors.accent.yellow,
+          count: allAchievements.filter(a => a.category === 'speed').length,
+          unlockedCount: unlockedAchievements.filter(a => a.category === 'speed').length,
+        },
+        {
+          id: 'streak',
+          name: 'Streak',
+          icon: <Flame size={20} color={theme.colors.text.primary} />,
+          color: theme.colors.accent.pink,
+          count: allAchievements.filter(a => a.category === 'streak').length,
+          unlockedCount: unlockedAchievements.filter(a => a.category === 'streak').length,
+        },
+        {
+          id: 'social',
+          name: 'Social',
+          icon: <Users size={20} color={theme.colors.text.primary} />,
+          color: theme.colors.accent.cyan,
+          count: allAchievements.filter(a => a.category === 'social').length,
+          unlockedCount: unlockedAchievements.filter(a => a.category === 'social').length,
+        },
+        {
+          id: 'mastery',
+          name: 'Mastery',
+          icon: <Crown size={20} color={theme.colors.text.primary} />,
+          color: theme.colors.accent.green,
+          count: allAchievements.filter(a => a.category === 'mastery').length,
+          unlockedCount: unlockedAchievements.filter(a => a.category === 'mastery').length,
+        },
+      ];
+
+      setCategories(categoryStats);
+    } catch (error) {
+      console.error('Error loading achievements:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
@@ -351,9 +441,36 @@ export default function AchievementsScreen() {
     transform: [{ scale: trophyScale.value }],
   }));
 
-  const filteredAchievements = achievements.filter(achievement => 
-    selectedCategory === 'all' || achievement.category === selectedCategory
+  const filteredAchievements = achievements.filter(achievement => {
+    const categoryMatch = selectedCategory === 'all' || achievement.category === selectedCategory;
+    return categoryMatch;
+  });
+
+  const isAchievementUnlocked = (achievementId: string) => {
+    return userAchievements.some(ua => ua.achievement_id === achievementId);
+  };
+
+  const getAchievementProgress = (achievementId: string) => {
+    const userAchievement = userAchievements.find(ua => ua.achievement_id === achievementId);
+    return userAchievement ? { unlocked: true, unlockedAt: userAchievement.earned_at } : { unlocked: false };
+  };
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[
+          theme.colors.background.primary,
+          theme.colors.background.secondary,
+        ]}
+        style={styles.container}
+      >
+        <View style={styles.loadingContainer}>
+          <MascotAvatar size={80} animated={true} glowing={true} mood="focused" />
+          <Text style={styles.loadingText}>Loading achievements...</Text>
+        </View>
+      </LinearGradient>
   );
+  }
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -533,6 +650,8 @@ export default function AchievementsScreen() {
               <AchievementCard
                 key={achievement.id}
                 achievement={achievement}
+                isUnlocked={isAchievementUnlocked(achievement.id)}
+                progressData={getAchievementProgress(achievement.id)}
                 index={index}
                 getRarityColor={getRarityColor}
                 getRarityGradient={getRarityGradient}
@@ -664,6 +783,8 @@ function CategoryCard({ category, isSelected, onPress, index = 0 }: {
 
 function AchievementCard({ achievement, index, getRarityColor, getRarityGradient }: {
   achievement: Achievement;
+  isUnlocked: boolean;
+  progressData: { unlocked: boolean; unlockedAt?: string };
   index: number;
   getRarityColor: (rarity: string) => string;
   getRarityGradient: (rarity: string) => string[];
@@ -679,14 +800,14 @@ function AchievementCard({ achievement, index, getRarityColor, getRarityGradient
     }, index * 100);
     
     // Shimmer animation for unlocked achievements
-    if (achievement.unlocked) {
+    if (isUnlocked) {
       shimmerPosition.value = withRepeat(
         withTiming(1, { duration: 2000, easing: Easing.linear }),
         -1,
         false
       );
     }
-  }, [index, achievement.unlocked]);
+  }, [index, isUnlocked]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -709,7 +830,7 @@ function AchievementCard({ achievement, index, getRarityColor, getRarityGradient
   });
   
   const handlePress = () => {
-    if (achievement.unlocked) {
+    if (isUnlocked) {
       scale.value = withSequence(
         withTiming(0.95, { duration: 100 }),
         withSpring(1, { damping: 15, stiffness: 120 })
@@ -720,33 +841,33 @@ function AchievementCard({ achievement, index, getRarityColor, getRarityGradient
   return (
     <Animated.View style={[styles.achievementCard, animatedStyle]}>
       <TouchableOpacity 
-        activeOpacity={achievement.unlocked ? 0.8 : 1}
+        activeOpacity={isUnlocked ? 0.8 : 1}
         onPress={handlePress}
       >
         <LinearGradient
-          colors={achievement.unlocked 
+          colors={isUnlocked 
             ? getRarityGradient(achievement.rarity)
             : [theme.colors.background.tertiary, theme.colors.background.secondary]
           }
           style={[
             styles.achievementGradient,
-            achievement.unlocked && styles.unlockedAchievement
+            isUnlocked && styles.unlockedAchievement
           ]}
         >
           <View style={styles.achievementHeader}>
             <View style={[
               styles.achievementIcon,
               { 
-                backgroundColor: achievement.unlocked 
+                backgroundColor: isUnlocked 
                   ? getRarityColor(achievement.rarity) + '20'
                   : theme.colors.background.tertiary 
               }
             ]}>
               <Text style={[
                 styles.achievementEmoji,
-                !achievement.unlocked && styles.lockedEmoji
+                !isUnlocked && styles.lockedEmoji
               ]}>
-                {achievement.unlocked ? achievement.icon : '🔒'}
+                {isUnlocked ? (achievement.icon || '🏆') : '🔒'}
               </Text>
             </View>
             
@@ -754,7 +875,7 @@ function AchievementCard({ achievement, index, getRarityColor, getRarityGradient
               <View style={styles.achievementTitleRow}>
                 <Text style={[
                   styles.achievementTitle,
-                  !achievement.unlocked && styles.lockedText
+                  !isUnlocked && styles.lockedText
                 ]}>
                   {achievement.title}
                 </Text>
@@ -774,48 +895,27 @@ function AchievementCard({ achievement, index, getRarityColor, getRarityGradient
               
               <Text style={[
                 styles.achievementDescription,
-                !achievement.unlocked && styles.lockedText
+                !isUnlocked && styles.lockedText
               ]}>
                 {achievement.description}
               </Text>
             </View>
           </View>
 
-          {!achievement.unlocked && achievement.progress && achievement.total && (
-            <View style={styles.progressSection}>
-              <View style={styles.progressInfo}>
-                <Text style={styles.progressLabel}>Progress</Text>
-                <Text style={styles.progressText}>
-                  {achievement.progress}/{achievement.total}
-                </Text>
-              </View>
-              
-              <View style={styles.progressBar}>
-                <LinearGradient
-                  colors={[getRarityColor(achievement.rarity), getRarityColor(achievement.rarity) + '80']}
-                  style={[
-                    styles.progressFill,
-                    { width: `${(achievement.progress / achievement.total) * 100}%` }
-                  ]}
-                />
-              </View>
-            </View>
-          )}
-
           <View style={styles.achievementFooter}>
             <View style={styles.xpReward}>
               <Star size={16} color={theme.colors.accent.yellow} />
-              <Text style={styles.xpText}>{achievement.xpReward} XP</Text>
+              <Text style={styles.xpText}>{achievement.xp_reward} XP</Text>
             </View>
             
-            {achievement.unlocked && achievement.unlockedAt && (
+            {isUnlocked && progressData.unlockedAt && (
               <Text style={styles.unlockedDate}>
-                Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}
+                Unlocked {new Date(progressData.unlockedAt).toLocaleDateString()}
               </Text>
             )}
           </View>
 
-          {achievement.unlocked && (
+          {isUnlocked && (
             <View style={styles.unlockedBadge}>
               <LinearGradient
                 colors={[theme.colors.accent.green, theme.colors.accent.cyan]}
@@ -827,7 +927,7 @@ function AchievementCard({ achievement, index, getRarityColor, getRarityGradient
           )}
           
           {/* Improved shimmer effect for unlocked achievements */}
-          {achievement.unlocked && (
+          {isUnlocked && (
             <View style={styles.achievementShimmerContainer}>
               <Animated.View style={[styles.achievementShimmer, shimmerAnimatedStyle]}>
                 <LinearGradient
