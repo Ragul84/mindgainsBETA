@@ -38,6 +38,7 @@ import {
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import CircleProgress from '@/components/ui/CircleProgress';
+import MascotAvatar from '@/components/ui/MascotAvatar';
 
 const { width, height } = Dimensions.get('window');
 
