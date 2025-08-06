@@ -58,7 +58,7 @@ import MascotAvatar from '@/components/ui/MascotAvatar';
 const { width, height } = Dimensions.get('window');
 
 import { SupabaseService } from '@/utils/supabaseService';
-import type { Achievement, UserAchievement } from '@/utils/supabaseService';
+import type { Achievement as SupabaseAchievement, UserAchievement } from '@/utils/supabaseService';
 
 interface Achievement {
   id: string;
@@ -294,7 +294,7 @@ const achievements: Achievement[] = [
 
 export default function AchievementsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievements, setAchievements] = useState<SupabaseAchievement[]>([]);
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [categories, setCategories] = useState<AchievementCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
