@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   Dimensions,
   RefreshControl,
   StatusBar,
@@ -20,7 +19,6 @@ import Animated, {
   withRepeat,
   withSequence,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import { 
   Zap, 
@@ -30,99 +28,28 @@ import {
   Clock,
   TrendingUp,
   Sparkles,
-  ChevronRight,
   Play,
-  Plus,
-  BookOpen,
   Star,
   Crown,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  Users,
+  Award
 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import MascotAvatar from '@/components/ui/MascotAvatar';
 import GradientButton from '@/components/ui/GradientButton';
 import CircleProgress from '@/components/ui/CircleProgress';
 import { SupabaseService } from '@/utils/supabaseService';
-import type { UserProfile, UserStats, Mission } from '@/utils/supabaseService';
+import type { UserProfile, UserStats, DailyQuiz } from '@/utils/supabaseService';
 
-const { width, height } = Dimensions.get('window');
-
-// Floating particle component for premium effect
-function FloatingParticle({ index }: { index: number }) {
-  const translateY = useSharedValue(Math.random() * height);
-  const translateX = useSharedValue(Math.random() * width);
-  const opacity = useSharedValue(0.1 + Math.random() * 0.2);
-  const scale = useSharedValue(0.5 + Math.random() * 0.5);
-
-  useEffect(() => {
-    // Continuous floating animation
-    translateY.value = withRepeat(
-      withSequence(
-        withTiming(translateY.value - 20 - Math.random() * 40, { 
-          duration: 3000 + Math.random() * 2000,
-          easing: Easing.inOut(Easing.sin)
-        }),
-        withTiming(translateY.value + 20 + Math.random() * 40, { 
-          duration: 3000 + Math.random() * 2000,
-          easing: Easing.inOut(Easing.sin)
-        })
-      ),
-      -1,
-      true
-    );
-    
-    // Subtle opacity pulsing
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(opacity.value + 0.1, { 
-          duration: 2000 + Math.random() * 1000,
-          easing: Easing.inOut(Easing.sin)
-        }),
-        withTiming(opacity.value, { 
-          duration: 2000 + Math.random() * 1000,
-          easing: Easing.inOut(Easing.sin)
-        })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-    opacity: opacity.value,
-  }));
-
-  const icons = [Brain, Sparkles, Zap, Target, BookOpen, Trophy, Crown, Star];
-  const IconComponent = icons[index % icons.length];
-  const colors = [
-    theme.colors.accent.purple,
-    theme.colors.accent.blue,
-    theme.colors.accent.cyan,
-    theme.colors.accent.yellow,
-    theme.colors.accent.green,
-    theme.colors.accent.pink,
-  ];
-
-  return (
-    <Animated.View style={[styles.particle, animatedStyle]}>
-      <IconComponent 
-        size={12 + Math.random() * 8} 
-        color={colors[index % colors.length]} 
-      />
-    </Animated.View>
-  );
-}
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [recentMissions, setRecentMissions] = useState<Mission[]>([]);
-  const [appStats, setAppStats] = useState({ totalUsers: 0, totalMissions: 0, activeUsers: 0 });
+  const [todayQuiz, setTodayQuiz] = useState<DailyQuiz | null>(null);
+  const [mascotMessage, setMascotMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -130,8 +57,6 @@ export default function HomeScreen() {
   const cardOpacity = useSharedValue(0);
   const cardTranslateY = useSharedValue(20);
   const statsScale = useSharedValue(0.9);
-  const shimmerPosition = useSharedValue(-1);
-  const glowIntensity = useSharedValue(0);
 
   useEffect(() => {
     loadUserData();
@@ -150,111 +75,29 @@ export default function HomeScreen() {
       -1,
       false
     );
-    
-    // Shimmer animation
-    shimmerPosition.value = withRepeat(
-      withTiming(1, { duration: 2000, easing: Easing.linear }),
-      -1,
-      false
-    );
-    
-    // Glow effect
-    glowIntensity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0.3, { duration: 2000, easing: Easing.inOut(Easing.sin) })
-      ),
-      -1,
-      false
-    );
   }, []);
 
   const loadUserData = async () => {
     try {
-      // Check if Supabase is configured
-      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
-        // Use demo data for development
-        setUserProfile({
-          id: 'demo-user',
-          user_id: 'demo-user',
-          email: 'demo@mindgains.ai',
-          full_name: 'Demo Student',
-          avatar_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
-        setUserStats({
-          id: 'demo-stats',
-          user_id: 'demo-user',
-          total_xp: 2450,
-          current_level: 5,
-          missions_completed: 12,
-          streak_days: 7,
-          last_activity_date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
-        setRecentMissions([
-          {
-            id: 'demo-1',
-            user_id: 'demo-user',
-            title: 'Indian Constitution - Fundamental Rights',
-            description: 'Master Articles 12-35 for UPSC Prelims',
-            subject_id: null,
-            content_type: 'text',
-            content_text: 'Fundamental Rights',
-            difficulty: 'medium',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 'demo-2',
-            user_id: 'demo-user',
-            title: 'Mughal Empire Timeline',
-            description: 'Complete history from Babur to Aurangzeb',
-            subject_id: null,
-            content_type: 'text',
-            content_text: 'Mughal Empire',
-            difficulty: 'hard',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
-        
-        setAppStats({ totalUsers: 125000, totalMissions: 45000, activeUsers: 8500 });
-        setIsLoading(false);
-        return;
-      }
-      
       const user = await SupabaseService.getCurrentUser();
       if (!user) {
-        // For demo purposes, don't redirect immediately
-        console.log('No user found, using demo data');
-        setUserProfile(null);
-        setUserStats(null);
-        setRecentMissions([]);
-        setAppStats({ totalUsers: 125000, totalMissions: 45000, activeUsers: 8500 });
-        setIsLoading(false);
+        router.replace('/auth');
         return;
       }
 
-      const [profile, stats, missions, globalStats] = await Promise.all([
+      const [profile, stats, quiz, recommendations] = await Promise.all([
         SupabaseService.getProfile(user.id),
         SupabaseService.getUserStats(user.id),
-        SupabaseService.getUserMissions(user.id, 5),
-        SupabaseService.getAppStats()
+        SupabaseService.getTodayQuiz(),
+        SupabaseService.getMascotRecommendations(user.id)
       ]);
 
       setUserProfile(profile);
       setUserStats(stats);
-      setRecentMissions(missions);
-      setAppStats(globalStats);
+      setTodayQuiz(quiz);
+      setMascotMessage(recommendations[0] || "Ready to boost your knowledge today? 🚀");
       
-      // Track user activity for analytics
+      // Track user activity
       await SupabaseService.trackUserActivity(user.id, 'dashboard_view');
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -269,6 +112,23 @@ export default function HomeScreen() {
     loadUserData();
   };
 
+  const handleStartDailyQuiz = async () => {
+    try {
+      let quiz = todayQuiz;
+      if (!quiz) {
+        quiz = await SupabaseService.generateDailyQuiz();
+        setTodayQuiz(quiz);
+      }
+      
+      router.push({
+        pathname: '/quiz/daily',
+        params: { quizId: quiz.id }
+      });
+    } catch (error) {
+      console.error('Error starting daily quiz:', error);
+    }
+  };
+
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     opacity: cardOpacity.value,
     transform: [{ translateY: cardTranslateY.value }],
@@ -281,48 +141,6 @@ export default function HomeScreen() {
   const mascotAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: mascotScale.value }],
   }));
-  
-  const shimmerAnimatedStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(
-      shimmerPosition.value,
-      [-1, 1],
-      [-width * 1.5, width * 1.5]
-    );
-    
-    return {
-      transform: [
-        { translateX },
-        { rotate: '-30deg' }
-      ],
-    };
-  });
-  
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
-    shadowOpacity: 0.3 + glowIntensity.value * 0.4,
-    shadowRadius: 20 + glowIntensity.value * 30,
-  }));
-
-  const handleStartNewMission = () => {
-    router.push('/create');
-  };
-
-  const handleContinueMission = (mission: Mission) => {
-    router.push({
-      pathname: '/mission/clarity',
-      params: {
-        missionId: mission.id,
-      },
-    });
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return theme.colors.accent.green;
-      case 'medium': return theme.colors.accent.yellow;
-      case 'hard': return theme.colors.accent.pink;
-      default: return theme.colors.accent.blue;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -342,7 +160,7 @@ export default function HomeScreen() {
     );
   }
 
-  const nextLevelXP = userStats ? (userStats.current_level * userStats.current_level * 100) : 1000;
+  const nextLevelXP = userStats ? (userStats.current_level * 1000) : 1000;
 
   return (
     <LinearGradient
@@ -354,13 +172,6 @@ export default function HomeScreen() {
       style={styles.container}
     >
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      {/* Background particles */}
-      <View style={styles.particlesContainer}>
-        {[...Array(15)].map((_, index) => (
-          <FloatingParticle key={index} index={index} />
-        ))}
-      </View>
       
       <ScrollView 
         style={styles.scrollView}
@@ -381,13 +192,13 @@ export default function HomeScreen() {
             <View style={styles.welcomeSection}>
               <Text style={styles.welcomeText}>Namaste,</Text>
               <Text style={styles.userName}>
-                {userProfile?.full_name ? `${userProfile.full_name.split(' ')[0]}! 🚀` : 'Ready to learn? 🚀'}
+                {userProfile?.full_name ? `${userProfile.full_name.split(' ')[0]}! 🇮🇳` : 'Knowledge Seeker! 🇮🇳'}
               </Text>
               <Text style={styles.userSubtext}>
-                Join {appStats.totalUsers.toLocaleString()}+ students mastering competitive exams
+                Building intellectual India, one mind at a time
               </Text>
             </View>
-            <Animated.View style={[mascotAnimatedStyle, glowAnimatedStyle]}>
+            <Animated.View style={mascotAnimatedStyle}>
               <MascotAvatar
                 size={70}
                 animated={true}
@@ -397,6 +208,22 @@ export default function HomeScreen() {
             </Animated.View>
           </View>
         </View>
+
+        {/* Mascot Message */}
+        <Animated.View style={[styles.mascotMessageContainer, cardAnimatedStyle]}>
+          <LinearGradient
+            colors={[
+              theme.colors.background.card,
+              theme.colors.background.secondary,
+            ]}
+            style={styles.mascotMessageCard}
+          >
+            <View style={styles.mascotMessageContent}>
+              <Brain size={20} color={theme.colors.accent.purple} />
+              <Text style={styles.mascotMessageText}>{mascotMessage}</Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Stats Overview */}
         <Animated.View style={[styles.statsContainer, statsAnimatedStyle]}>
@@ -431,7 +258,7 @@ export default function HomeScreen() {
                   value={userStats?.total_xp || 0}
                   maxValue={nextLevelXP}
                   size={70}
-                  strokeWidth={8}
+                  strokeWidth={6}
                   colors={theme.colors.gradient.primary}
                 />
                 <Text style={styles.statValue}>{userStats?.total_xp || 0} XP</Text>
@@ -451,135 +278,144 @@ export default function HomeScreen() {
                 <Text style={styles.statLabel}>Streak</Text>
               </View>
             </View>
-            
-            {/* Improved shimmer effect */}
-            <View style={styles.shimmerContainer}>
-              <Animated.View style={[styles.shimmerOverlay, shimmerAnimatedStyle]}>
-                <LinearGradient
-                  colors={['transparent', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.shimmerGradient}
-                />
-              </Animated.View>
-            </View>
           </LinearGradient>
         </Animated.View>
 
-        {/* Quick Actions */}
-        <Animated.View style={[styles.quickActionsContainer, cardAnimatedStyle]}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={handleStartNewMission}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={theme.colors.gradient.primary}
-                style={styles.quickActionGradient}
-              >
-                <Plus size={24} color={theme.colors.text.primary} />
-                <Text style={styles.quickActionText}>New Mission</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={theme.colors.gradient.secondary}
-                style={styles.quickActionGradient}
-              >
-                <Clock size={24} color={theme.colors.text.primary} />
-                <Text style={styles.quickActionText}>Quick Review</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        {/* Recent Missions */}
-        <Animated.View style={[styles.recentMissionsContainer, cardAnimatedStyle]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Continue Learning</Text>
-            <TouchableOpacity style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-              <ChevronRight size={16} color={theme.colors.accent.purple} />
-            </TouchableOpacity>
-          </View>
-
-          {recentMissions.length > 0 ? (
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.missionsScroll}
-            >
-              {recentMissions.map((mission, index) => (
-                <MissionCard
-                  key={mission.id}
-                  mission={mission}
-                  onPress={() => handleContinueMission(mission)}
-                  index={index}
-                  getDifficultyColor={getDifficultyColor}
-                />
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={styles.emptyState}>
-              <Brain size={48} color={theme.colors.text.tertiary} />
-              <Text style={styles.emptyStateText}>No missions yet</Text>
-              <Text style={styles.emptyStateSubtext}>Create your first learning mission to get started!</Text>
-              <GradientButton
-                title="Create Mission"
-                onPress={handleStartNewMission}
-                size="medium"
-                style={styles.emptyStateButton}
-                icon={<Plus size={18} color={theme.colors.text.primary} />}
-              />
+        {/* Daily Quiz */}
+        <Animated.View style={[styles.dailyQuizContainer, cardAnimatedStyle]}>
+          <LinearGradient
+            colors={[theme.colors.accent.purple + '20', theme.colors.accent.blue + '20']}
+            style={styles.dailyQuizCard}
+          >
+            <View style={styles.dailyQuizHeader}>
+              <View style={styles.dailyQuizTitleContainer}>
+                <Calendar size={24} color={theme.colors.accent.purple} />
+                <Text style={styles.dailyQuizTitle}>Today's Quiz</Text>
+              </View>
+              <View style={styles.dailyQuizBadge}>
+                <Star size={16} color={theme.colors.accent.yellow} />
+                <Text style={styles.dailyQuizBadgeText}>Daily</Text>
+              </View>
             </View>
-          )}
+            
+            <Text style={styles.dailyQuizDescription}>
+              10 questions covering Indian History, Polity, Geography & Current Affairs
+            </Text>
+            
+            <View style={styles.dailyQuizMeta}>
+              <View style={styles.dailyQuizMetaItem}>
+                <Clock size={16} color={theme.colors.text.tertiary} />
+                <Text style={styles.dailyQuizMetaText}>~5 minutes</Text>
+              </View>
+              <View style={styles.dailyQuizMetaItem}>
+                <Target size={16} color={theme.colors.text.tertiary} />
+                <Text style={styles.dailyQuizMetaText}>100 points</Text>
+              </View>
+            </View>
+
+            <GradientButton
+              title="Start Daily Quiz"
+              onPress={handleStartDailyQuiz}
+              size="large"
+              fullWidth
+              icon={<Play size={20} color={theme.colors.text.primary} />}
+              colors={[theme.colors.accent.purple, theme.colors.accent.blue]}
+              style={styles.dailyQuizButton}
+            />
+          </LinearGradient>
         </Animated.View>
 
-        {/* Exam Prep Recommendations */}
-        <Animated.View style={[styles.recommendationsContainer, cardAnimatedStyle]}>
+        {/* Subject Categories */}
+        <Animated.View style={[styles.subjectsContainer, cardAnimatedStyle]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Explore Subjects</Text>
+            <TouchableOpacity 
+              style={styles.seeAllButton}
+              onPress={() => router.push('/learn')}
+            >
+              <Text style={styles.seeAllText}>See All</Text>
+              <ArrowRight size={16} color={theme.colors.accent.purple} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.subjectsGrid}>
+            {[
+              { name: 'History', icon: '🏛️', color: theme.colors.accent.purple },
+              { name: 'Polity', icon: '⚖️', color: theme.colors.accent.blue },
+              { name: 'Geography', icon: '🌍', color: theme.colors.accent.green },
+              { name: 'Economy', icon: '💰', color: theme.colors.accent.yellow },
+            ].map((subject, index) => (
+              <TouchableOpacity
+                key={subject.name}
+                style={styles.subjectCard}
+                onPress={() => router.push({
+                  pathname: '/quiz/subject',
+                  params: { subject: subject.name }
+                })}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={[subject.color + '20', subject.color + '10']}
+                  style={styles.subjectCardGradient}
+                >
+                  <Text style={styles.subjectIcon}>{subject.icon}</Text>
+                  <Text style={styles.subjectName}>{subject.name}</Text>
+                  <View style={styles.subjectAction}>
+                    <Play size={16} color={subject.color} />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* Leaderboard Preview */}
+        <Animated.View style={[styles.leaderboardContainer, cardAnimatedStyle]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
               <Crown size={20} color={theme.colors.accent.yellow} />
-              <Text style={styles.sectionTitle}>Exam Prep Recommendations</Text>
+              <Text style={styles.sectionTitle}>Leaderboard</Text>
             </View>
+            <TouchableOpacity style={styles.seeAllButton}>
+              <Text style={styles.seeAllText}>View All</Text>
+              <ArrowRight size={16} color={theme.colors.accent.purple} />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.recommendationsGrid}>
-            <RecommendationCard
-              title="UPSC Prelims"
-              description="Indian Polity & Constitution"
-              icon={<BookOpen size={24} color={theme.colors.text.primary} />}
-              color={theme.colors.accent.purple}
-              onPress={handleStartNewMission}
-            />
-            <RecommendationCard
-              title="JEE Mains"
-              description="Physics Mechanics"
-              icon={<Zap size={24} color={theme.colors.text.primary} />}
-              color={theme.colors.accent.blue}
-              onPress={handleStartNewMission}
-            />
-            <RecommendationCard
-              title="Banking Exams"
-              description="Current Affairs"
-              icon={<Target size={24} color={theme.colors.text.primary} />}
-              color={theme.colors.accent.green}
-              onPress={handleStartNewMission}
-            />
-            <RecommendationCard
-              title="NEET"
-              description="Human Physiology"
-              icon={<Brain size={24} color={theme.colors.text.primary} />}
-              color={theme.colors.accent.pink}
-              onPress={handleStartNewMission}
-            />
-          </View>
+          <LinearGradient
+            colors={[
+              theme.colors.background.card,
+              theme.colors.background.secondary,
+            ]}
+            style={styles.leaderboardCard}
+          >
+            <View style={styles.leaderboardHeader}>
+              <Text style={styles.leaderboardTitle}>Top Performers This Week</Text>
+              <Users size={16} color={theme.colors.text.tertiary} />
+            </View>
+            
+            <View style={styles.leaderboardList}>
+              {[
+                { rank: 1, name: 'Arjun S.', xp: 2450, avatar: '👨‍🎓' },
+                { rank: 2, name: 'Priya K.', xp: 2380, avatar: '👩‍🎓' },
+                { rank: 3, name: 'Rahul M.', xp: 2290, avatar: '👨‍💼' },
+              ].map((user, index) => (
+                <View key={user.rank} style={styles.leaderboardItem}>
+                  <View style={styles.leaderboardRank}>
+                    <Text style={styles.leaderboardRankText}>{user.rank}</Text>
+                  </View>
+                  <Text style={styles.leaderboardAvatar}>{user.avatar}</Text>
+                  <Text style={styles.leaderboardName}>{user.name}</Text>
+                  <Text style={styles.leaderboardXP}>{user.xp} XP</Text>
+                </View>
+              ))}
+            </View>
+            
+            <TouchableOpacity style={styles.viewFullLeaderboard}>
+              <Text style={styles.viewFullLeaderboardText}>View Full Leaderboard</Text>
+              <ArrowRight size={16} color={theme.colors.accent.purple} />
+            </TouchableOpacity>
+          </LinearGradient>
         </Animated.View>
 
         {/* Bottom Spacing */}
@@ -589,249 +425,9 @@ export default function HomeScreen() {
   );
 }
 
-function MissionCard({ mission, onPress, index, getDifficultyColor }: {
-  mission: Mission;
-  onPress: () => void;
-  index: number;
-  getDifficultyColor: (difficulty: string) => string;
-}) {
-  const scale = useSharedValue(0.9);
-  const opacity = useSharedValue(0);
-  const shimmerPosition = useSharedValue(-1);
-
-  useEffect(() => {
-    setTimeout(() => {
-      opacity.value = withTiming(1, { duration: 400 });
-      scale.value = withSpring(1, { damping: 15, stiffness: 100 });
-      
-      // Start shimmer animation
-      shimmerPosition.value = withRepeat(
-        withTiming(1, { duration: 2000, easing: Easing.linear }),
-        -1,
-        false
-      );
-    }, index * 150);
-  }, [index]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
-  }));
-  
-  const shimmerAnimatedStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(
-      shimmerPosition.value,
-      [-1, 1],
-      [-width, width]
-    );
-    
-    return {
-      transform: [
-        { translateX },
-        { rotate: '-30deg' }
-      ],
-    };
-  });
-
-  // Calculate progress from mission_progress if available
-  const progress = 25; // Default progress, would be calculated from actual progress data
-  const isCompleted = mission.status === 'completed';
-
-  return (
-    <Animated.View style={[styles.missionCard, animatedStyle]}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-        <LinearGradient
-          colors={[
-            theme.colors.background.card,
-            theme.colors.background.secondary,
-          ]}
-          style={styles.missionCardGradient}
-        >
-          <View style={styles.missionImageContainer}>
-            <LinearGradient
-              colors={[theme.colors.accent.purple + '40', theme.colors.accent.blue + '40']}
-              style={styles.missionImagePlaceholder}
-            >
-              <Brain size={32} color={theme.colors.text.primary} />
-            </LinearGradient>
-            
-            <View style={styles.missionBadge}>
-              <LinearGradient
-                colors={[theme.colors.accent.yellow, theme.colors.accent.green]}
-                style={styles.missionBadgeGradient}
-              >
-                <Star size={12} color={theme.colors.text.primary} />
-                <Text style={styles.missionBadgeText}>AI-Powered</Text>
-              </LinearGradient>
-            </View>
-            
-            {/* Shimmer effect for image */}
-            <View style={styles.missionImageShimmerContainer}>
-              <Animated.View style={[styles.missionImageShimmer, shimmerAnimatedStyle]}>
-                <LinearGradient
-                  colors={['transparent', 'rgba(255,255,255,0.1)', 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.shimmerGradient}
-                />
-              </Animated.View>
-            </View>
-          </View>
-          
-          <View style={styles.missionContent}>
-            <View style={styles.missionHeader}>
-              <Text style={styles.missionTitle} numberOfLines={2}>
-                {mission.title}
-              </Text>
-              <View style={[
-                styles.difficultyBadge,
-                { backgroundColor: getDifficultyColor(mission.difficulty) + '20' }
-              ]}>
-                <Text style={[
-                  styles.difficultyText,
-                  { color: getDifficultyColor(mission.difficulty) }
-                ]}>
-                  {mission.difficulty}
-                </Text>
-              </View>
-            </View>
-
-            {mission.description && (
-              <Text style={styles.missionDescription} numberOfLines={2}>
-                {mission.description}
-              </Text>
-            )}
-
-            <View style={styles.missionProgress}>
-              <View style={styles.progressBar}>
-                <LinearGradient
-                  colors={theme.colors.gradient.primary}
-                  style={[styles.progressFill, { width: `${progress}%` }]}
-                />
-              </View>
-              <Text style={styles.progressText}>{progress}%</Text>
-            </View>
-
-            <View style={styles.missionFooter}>
-              <View style={styles.statusContainer}>
-                <Text style={styles.statusText}>
-                  {isCompleted ? 'Completed' : 'In Progress'}
-                </Text>
-              </View>
-              {!isCompleted && (
-                <TouchableOpacity style={styles.continueButton}>
-                  <LinearGradient
-                    colors={[theme.colors.accent.purple, theme.colors.accent.blue]}
-                    style={styles.continueButtonGradient}
-                  >
-                    <Play size={12} color={theme.colors.text.primary} />
-                    <Text style={styles.continueText}>Continue</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-function RecommendationCard({ title, description, icon, color, onPress }: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  onPress: () => void;
-}) {
-  const scale = useSharedValue(1);
-  const shimmerPosition = useSharedValue(-1);
-  
-  useEffect(() => {
-    // Start shimmer animation
-    shimmerPosition.value = withRepeat(
-      withTiming(1, { duration: 2000, easing: Easing.linear }),
-      -1,
-      false
-    );
-  }, []);
-  
-  const handlePress = () => {
-    scale.value = withSequence(
-      withTiming(0.95, { duration: 100 }),
-      withSpring(1, { damping: 15, stiffness: 120 })
-    );
-    onPress();
-  };
-  
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-  
-  const shimmerAnimatedStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(
-      shimmerPosition.value,
-      [-1, 1],
-      [-width, width]
-    );
-    
-    return {
-      transform: [
-        { translateX },
-        { rotate: '-30deg' }
-      ],
-    };
-  });
-  
-  return (
-    <Animated.View style={[styles.recommendationCard, animatedStyle]}>
-      <TouchableOpacity 
-        onPress={handlePress}
-        activeOpacity={0.8}
-        style={styles.recommendationTouchable}
-      >
-        <LinearGradient
-          colors={[color + '20', color + '10']}
-          style={styles.recommendationGradient}
-        >
-          <View style={[styles.recommendationIcon, { backgroundColor: color + '30' }]}>
-            {icon}
-          </View>
-          <Text style={styles.recommendationTitle}>{title}</Text>
-          <Text style={styles.recommendationDescription}>{description}</Text>
-          <View style={styles.recommendationAction}>
-            <ArrowRight size={16} color={color} />
-          </View>
-          
-          {/* Shimmer effect */}
-          <View style={styles.recommendationShimmerContainer}>
-            <Animated.View style={[styles.recommendationShimmer, shimmerAnimatedStyle]}>
-              <LinearGradient
-                colors={['transparent', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.shimmerGradient}
-              />
-            </Animated.View>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  particlesContainer: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-  },
-  particle: {
-    position: 'absolute',
   },
   scrollView: {
     flex: 1,
@@ -881,6 +477,27 @@ const styles = StyleSheet.create({
     color: theme.colors.text.tertiary,
     marginTop: theme.spacing.xs,
   },
+  mascotMessageContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
+  mascotMessageCard: {
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border.primary,
+  },
+  mascotMessageContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  mascotMessageText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: theme.fonts.body,
+    color: theme.colors.text.primary,
+  },
   statsContainer: {
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.xl,
@@ -891,27 +508,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border.primary,
     ...theme.shadows.card,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  shimmerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  shimmerOverlay: {
-    position: 'absolute',
-    top: -100,
-    left: -100,
-    width: width * 2,
-    height: 200,
-    opacity: 0.6,
-  },
-  shimmerGradient: {
-    flex: 1,
   },
   statsHeader: {
     flexDirection: 'row',
@@ -954,51 +550,90 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.caption,
     color: theme.colors.text.tertiary,
   },
-  quickActionsContainer: {
+  dailyQuizContainer: {
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.xl,
   },
-  sectionTitle: {
+  dailyQuizCard: {
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border.primary,
+    ...theme.shadows.card,
+  },
+  dailyQuizHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  dailyQuizTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  dailyQuizTitle: {
     fontSize: 20,
     fontFamily: theme.fonts.heading,
     color: theme.colors.text.primary,
+  },
+  dailyQuizBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.accent.yellow + '20',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    gap: theme.spacing.xs,
+  },
+  dailyQuizBadgeText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.caption,
+    color: theme.colors.accent.yellow,
+  },
+  dailyQuizDescription: {
+    fontSize: 14,
+    fontFamily: theme.fonts.caption,
+    color: theme.colors.text.secondary,
     marginBottom: theme.spacing.md,
   },
-  quickActions: {
+  dailyQuizMeta: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
-  quickActionButton: {
-    flex: 1,
-    borderRadius: theme.borderRadius.lg,
-    overflow: 'hidden',
-  },
-  quickActionGradient: {
-    paddingVertical: theme.spacing.lg,
+  dailyQuizMetaItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    gap: theme.spacing.xs,
   },
-  quickActionText: {
-    fontSize: 16,
-    fontFamily: theme.fonts.subheading,
-    color: theme.colors.text.primary,
+  dailyQuizMetaText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.caption,
+    color: theme.colors.text.tertiary,
   },
-  recentMissionsContainer: {
+  dailyQuizButton: {
+    marginTop: theme.spacing.md,
+  },
+  subjectsContainer: {
+    paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.md,
   },
   sectionTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: theme.fonts.heading,
+    color: theme.colors.text.primary,
   },
   seeAllButton: {
     flexDirection: 'row',
@@ -1010,238 +645,112 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.caption,
     color: theme.colors.accent.purple,
   },
-  missionsScroll: {
-    paddingLeft: theme.spacing.lg,
-    paddingRight: theme.spacing.sm,
-    gap: theme.spacing.md,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.xl,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontFamily: theme.fonts.heading,
-    color: theme.colors.text.primary,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  emptyStateButton: {
-    marginTop: theme.spacing.md,
-  },
-  missionCard: {
-    width: 280,
-    borderRadius: theme.borderRadius.lg,
-    overflow: 'hidden',
-  },
-  missionCardGradient: {
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border.tertiary,
-    ...theme.shadows.card,
-  },
-  missionImageContainer: {
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  missionImagePlaceholder: {
-    width: '100%',
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  missionImageShimmerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  missionImageShimmer: {
-    position: 'absolute',
-    top: -100,
-    left: -100,
-    width: width * 2,
-    height: 200,
-    opacity: 0.4,
-  },
-  missionBadge: {
-    position: 'absolute',
-    top: theme.spacing.sm,
-    right: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
-    overflow: 'hidden',
-  },
-  missionBadgeGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  missionBadgeText: {
-    fontSize: 10,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.primary,
-  },
-  missionContent: {
-    padding: theme.spacing.md,
-  },
-  missionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.sm,
-  },
-  missionTitle: {
-    fontSize: 16,
-    fontFamily: theme.fonts.subheading,
-    color: theme.colors.text.primary,
-    flex: 1,
-    marginRight: theme.spacing.sm,
-  },
-  difficultyBadge: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-  },
-  difficultyText: {
-    fontSize: 10,
-    fontFamily: theme.fonts.caption,
-    textTransform: 'uppercase',
-  },
-  missionDescription: {
-    fontSize: 14,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing.md,
-  },
-  missionProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: theme.colors.background.tertiary,
-    borderRadius: theme.borderRadius.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: theme.borderRadius.sm,
-  },
-  progressText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.secondary,
-    minWidth: 35,
-  },
-  missionFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusContainer: {
-    flex: 1,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.tertiary,
-  },
-  continueButton: {
-    borderRadius: theme.borderRadius.sm,
-    overflow: 'hidden',
-  },
-  continueButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-  },
-  continueText: {
-    fontSize: 12,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.primary,
-  },
-  recommendationsContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
-  },
-  recommendationsGrid: {
+  subjectsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.md,
   },
-  recommendationCard: {
+  subjectCard: {
     width: '47%',
-  },
-  recommendationTouchable: {
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
   },
-  recommendationGradient: {
-    padding: theme.spacing.md,
+  subjectCardGradient: {
+    padding: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border.tertiary,
     borderRadius: theme.borderRadius.lg,
-    minHeight: 140,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  recommendationShimmerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  recommendationShimmer: {
-    position: 'absolute',
-    top: -100,
-    left: -100,
-    width: width * 2,
-    height: 200,
-    opacity: 0.4,
-  },
-  recommendationIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.borderRadius.md,
-    justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 120,
+    position: 'relative',
+  },
+  subjectIcon: {
+    fontSize: 32,
     marginBottom: theme.spacing.sm,
   },
-  recommendationTitle: {
+  subjectName: {
     fontSize: 16,
     fontFamily: theme.fonts.subheading,
     color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
   },
-  recommendationDescription: {
-    fontSize: 12,
-    fontFamily: theme.fonts.caption,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing.md,
-  },
-  recommendationAction: {
+  subjectAction: {
     position: 'absolute',
     bottom: theme.spacing.md,
     right: theme.spacing.md,
+  },
+  leaderboardContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  leaderboardCard: {
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border.primary,
+    ...theme.shadows.card,
+  },
+  leaderboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  leaderboardTitle: {
+    fontSize: 16,
+    fontFamily: theme.fonts.subheading,
+    color: theme.colors.text.primary,
+  },
+  leaderboardList: {
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  leaderboardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.background.tertiary,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  leaderboardRank: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.accent.yellow,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  leaderboardRankText: {
+    fontSize: 12,
+    fontFamily: theme.fonts.subheading,
+    color: theme.colors.text.primary,
+  },
+  leaderboardAvatar: {
+    fontSize: 20,
+  },
+  leaderboardName: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: theme.fonts.body,
+    color: theme.colors.text.primary,
+  },
+  leaderboardXP: {
+    fontSize: 12,
+    fontFamily: theme.fonts.caption,
+    color: theme.colors.text.secondary,
+  },
+  viewFullLeaderboard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.xs,
+    paddingVertical: theme.spacing.sm,
+  },
+  viewFullLeaderboardText: {
+    fontSize: 14,
+    fontFamily: theme.fonts.caption,
+    color: theme.colors.accent.purple,
   },
   bottomSpacing: {
     height: 20,

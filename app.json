@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "MindGains AI",
-    "slug": "mindgains-ai",
+    "name": "MINDGAINS",
+    "slug": "mindgains",
     "version": "1.0.0",
-    "description": "India's #1 AI-powered learning platform for competitive exams. Transform any content into interactive learning missions.",
-    "keywords": ["education", "ai", "learning", "upsc", "jee", "neet", "banking", "competitive exams", "india"],
+    "description": "Revolutionary Android app transforming ordinary Indians into intellectual powerhouses through bite-sized daily education on India's heritage, current affairs, and knowledge.",
+    "keywords": ["education", "ai", "learning", "india", "current affairs", "history", "constitution", "quiz", "knowledge", "intellectual"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mindgains",
+    "scheme": "mindgains-app",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "primaryColor": "#8b5cf6",
     "backgroundColor": "#0f0f23",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mindgains.ai",
+      "bundleIdentifier": "com.mindgains.app",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "UIBackgroundModes": ["background-processing"],
@@ -23,7 +23,7 @@
       }
     },
     "android": {
-      "package": "com.mindgains.ai",
+      "package": "com.mindgains.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -41,8 +41,8 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "name": "MindGains AI - India's #1 AI Learning Platform",
-      "shortName": "MindGains AI",
+      "name": "MINDGAINS - Transform Your Mind",
+      "shortName": "MINDGAINS",
       "lang": "en",
       "scope": "/",
       "themeColor": "#8b5cf6",
@@ -57,15 +57,7 @@
       "expo-font", 
       "expo-web-browser",
       "expo-camera",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
-          }
-        }
-      ]
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
