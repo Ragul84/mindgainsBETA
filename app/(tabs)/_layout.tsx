@@ -1,13 +1,7 @@
 import { Tabs } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, StyleSheet, Platform, StatusBar, Text } from 'react-native';
-import { 
-  Home,
-  GraduationCap,
-  Plus,
-  Trophy,
-  User
-} from 'lucide-react-native';
+import { Chrome as Home, GraduationCap, Plus, Trophy, User } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import Animated, {
   useAnimatedStyle,
